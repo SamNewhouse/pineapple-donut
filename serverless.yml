@@ -1,0 +1,252 @@
+service: scanning-game-api
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  stage: ${opt:stage, 'dev'}
+  environment:
+    # Primary "GameDataTable", for backward compatibility
+    DYNAMODB_TABLE: ${self:service}-${self:provider.stage}
+    DYNAMODB_ITEMCATALOG: ItemCatalog
+    DYNAMODB_PLAYERPROFILES: PlayerProfiles
+    DYNAMODB_PLAYERINVENTORY: PlayerInventory
+    DYNAMODB_ENDPOINT: ${env:DYNAMODB_ENDPOINT, ''}
+    STAGE: ${self:provider.stage}
+
+plugins:
+  - serverless-offline
+
+custom:
+  dynamodb:
+    stages:
+      - dev
+    start:
+      port: 8000
+      inMemory: true
+      migrate: true
+
+functions:
+  # Game Functions
+  game--session--create:
+    handler: src/handlers/game/session.create
+    events:
+      - http:
+          path: session/create
+          method: post
+          cors: true
+
+  game--session--get:
+    handler: src/handlers/game/session.get
+    events:
+      - http:
+          path: session/{sessionId}
+          method: get
+          cors: true
+
+  # Scan Functions
+  scan--process:
+    handler: src/handlers/scan.process
+    events:
+      - http:
+          path: scan/process
+          method: post
+          cors: true
+
+  scan--validate:
+    handler: src/handlers/scan.validate
+    events:
+      - http:
+          path: scan/validate
+          method: post
+          cors: true
+
+  # Player Management
+  player--create:
+    handler: src/handlers/players/manager.createPlayer
+    events:
+      - http:
+          path: player/create
+          method: post
+          cors: true
+
+  player--score--update:
+    handler: src/handlers/players/manager.updateScore
+    events:
+      - http:
+          path: player/{playerId}/score
+          method: put
+          cors: true
+
+  player--stats--get:
+    handler: src/handlers/players/stats.getPlayerStats
+    events:
+      - http:
+          path: player/{playerId}/stats
+          method: get
+          cors: true
+
+  # Inventory Management
+  inventory--player--get:
+    handler: src/handlers/items/inventory.getPlayerInventory
+    events:
+      - http:
+          path: player/{playerId}/inventory
+          method: get
+          cors: true
+
+  inventory--player--add:
+    handler: src/handlers/items/inventory.addItemToInventory
+    events:
+      - http:
+          path: player/{playerId}/inventory/add
+          method: post
+          cors: true
+
+  inventory--player--remove:
+    handler: src/handlers/items/inventory.removeItemFromInventory
+    events:
+      - http:
+          path: player/{playerId}/inventory/remove
+          method: post
+          cors: true
+
+  # Collections
+  collections--all--get:
+    handler: src/handlers/items/collections.getAllCollections
+    events:
+      - http:
+          path: collections
+          method: get
+          cors: true
+
+  collections--player--get:
+    handler: src/handlers/items/collections.getPlayerCollections
+    events:
+      - http:
+          path: player/{playerId}/collections
+          method: get
+          cors: true
+
+  collections--player--claim:
+    handler: src/handlers/items/collections.claimCollectionReward
+    events:
+      - http:
+          path: player/{playerId}/collections/{collectionId}/claim
+          method: post
+          cors: true
+
+  # Trading System
+  trading--offer--create:
+    handler: src/handlers/items/trading.createTradeOffer
+    events:
+      - http:
+          path: trade/create
+          method: post
+          cors: true
+
+  trading--accept:
+    handler: src/handlers/items/trading.acceptTrade
+    events:
+      - http:
+          path: trade/{tradeId}/accept
+          method: post
+          cors: true
+
+  trading--reject:
+    handler: src/handlers/items/trading.rejectTrade
+    events:
+      - http:
+          path: trade/{tradeId}/reject
+          method: post
+          cors: true
+
+  trading--player--get:
+    handler: src/handlers/items/trading.getPlayerTrades
+    events:
+      - http:
+          path: player/{playerId}/trades
+          method: get
+          cors: true
+
+  trading--cancel:
+    handler: src/handlers/items/trading.cancelTrade
+    events:
+      - http:
+          path: trade/{tradeId}/cancel
+          method: post
+          cors: true
+
+  # Item System
+  item--info--get:
+    handler: src/handlers/items/collections.getItemInfo
+    events:
+      - http:
+          path: item/{barcode}
+          method: get
+          cors: true
+
+  item--all--get:
+    handler: src/handlers/items/collections.getAllItems
+    events:
+      - http:
+          path: items
+          method: get
+          cors: true
+
+resources:
+  Resources:
+    GameDataTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_TABLE}
+        AttributeDefinitions:
+          - AttributeName: pk
+            AttributeType: S
+          - AttributeName: sk
+            AttributeType: S
+        KeySchema:
+          - AttributeName: pk
+            KeyType: HASH
+          - AttributeName: sk
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
+    # Item Catalog Table
+    ItemCatalogTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ItemCatalog
+        AttributeDefinitions:
+          - AttributeName: itemId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: itemId
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+    # Players Table
+    PlayerProfilesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: PlayerProfiles
+        AttributeDefinitions:
+          - AttributeName: playerId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: playerId
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+    # Inventory Table
+    PlayerInventoryTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: PlayerInventory
+        AttributeDefinitions:
+          - AttributeName: playerId
+            AttributeType: S
+          - AttributeName: itemId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: playerId
+            KeyType: HASH
+          - AttributeName: itemId
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
