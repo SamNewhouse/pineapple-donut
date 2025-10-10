@@ -22,19 +22,55 @@ const tables: TableDefinition[] = [
   },
   {
     TableName: "Players",
-    AttributeDefinitions: [{ AttributeName: "playerId", AttributeType: "S" }],
+    AttributeDefinitions: [
+      { AttributeName: "playerId", AttributeType: "S" },
+      { AttributeName: "email", AttributeType: "S" },
+    ],
     KeySchema: [{ AttributeName: "playerId", KeyType: "HASH" }],
+    GlobalSecondaryIndexes: [
+      {
+        IndexName: "EmailIndex",
+        KeySchema: [{ AttributeName: "email", KeyType: "HASH" }],
+        Projection: { ProjectionType: "ALL" },
+      },
+    ],
     BillingMode: "PAY_PER_REQUEST",
   },
   {
     TableName: "Items",
     AttributeDefinitions: [
-      { AttributeName: "playerId", AttributeType: "S" },
       { AttributeName: "itemId", AttributeType: "S" },
+      { AttributeName: "playerId", AttributeType: "S" },
     ],
-    KeySchema: [
-      { AttributeName: "playerId", KeyType: "HASH" },
-      { AttributeName: "itemId", KeyType: "RANGE" },
+    KeySchema: [{ AttributeName: "itemId", KeyType: "HASH" }],
+    GlobalSecondaryIndexes: [
+      {
+        IndexName: "PlayerIndex",
+        KeySchema: [{ AttributeName: "playerId", KeyType: "HASH" }],
+        Projection: { ProjectionType: "ALL" },
+      },
+    ],
+    BillingMode: "PAY_PER_REQUEST",
+  },
+  {
+    TableName: "Trades",
+    AttributeDefinitions: [
+      { AttributeName: "tradeId", AttributeType: "S" },
+      { AttributeName: "fromPlayerId", AttributeType: "S" },
+      { AttributeName: "toPlayerId", AttributeType: "S" },
+    ],
+    KeySchema: [{ AttributeName: "tradeId", KeyType: "HASH" }],
+    GlobalSecondaryIndexes: [
+      {
+        IndexName: "FromPlayerIndex",
+        KeySchema: [{ AttributeName: "fromPlayerId", KeyType: "HASH" }],
+        Projection: { ProjectionType: "ALL" },
+      },
+      {
+        IndexName: "ToPlayerIndex",
+        KeySchema: [{ AttributeName: "toPlayerId", KeyType: "HASH" }],
+        Projection: { ProjectionType: "ALL" },
+      },
     ],
     BillingMode: "PAY_PER_REQUEST",
   },
