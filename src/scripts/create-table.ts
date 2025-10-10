@@ -1,9 +1,9 @@
-import AWS from "aws-sdk";
+import { DynamoDB } from "aws-sdk";
 
 const endpoint = process.env.DYNAMODB_ENDPOINT || "http://localhost:8000";
 
 // Dummy credentials for local dev
-const dynamodb = new AWS.DynamoDB({
+const dynamodb = new DynamoDB({
   endpoint,
   region: "localhost",
   accessKeyId: "dummy",
@@ -11,7 +11,7 @@ const dynamodb = new AWS.DynamoDB({
 });
 
 // Table definitions
-type TableDefinition = AWS.DynamoDB.CreateTableInput;
+type TableDefinition = DynamoDB.CreateTableInput;
 
 const tables: TableDefinition[] = [
   {
