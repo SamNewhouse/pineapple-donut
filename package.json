@@ -1,5 +1,5 @@
 {
-  "name": "scanning-game-api",
+  "name": "pineapple-donut",
   "version": "1.0.0",
   "description": "",
   "main": ".build/handler.js",
@@ -18,11 +18,15 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "aws-sdk": "^2.1692.0"
+    "aws-sdk": "^2.1692.0",
+    "google-auth-library": "^10.4.0",
+    "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.119",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.6.2",
+    "@types/uuid": "^10.0.0",
     "prettier": "^3.6.2",
     "serverless": "^4.20.2",
     "serverless-offline": "^14.4.0",

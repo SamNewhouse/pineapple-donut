@@ -1,11 +1,11 @@
-import AWS from "aws-sdk";
+import { DynamoDB } from "aws-sdk";
 import fs from "fs";
 import path from "path";
 
 const endpoint = process.env.DYNAMODB_ENDPOINT || "http://localhost:8000";
 const tableName = "ItemCatalog";
 
-const dynamodb = new AWS.DynamoDB.DocumentClient({
+const dynamodb = new DynamoDB.DocumentClient({
   endpoint,
   region: "localhost",
   accessKeyId: "dummy",
