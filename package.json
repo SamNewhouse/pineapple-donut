@@ -10,7 +10,7 @@
     "offline": "serverless offline --stage dev",
     "dynamo": "docker compose up -d",
     "table:create": "ts-node src/scripts/create-table.ts",
-    "table:seed": "ts-node src/scripts/seed-catalog.ts",
+    "table:seed": "ts-node src/scripts/seed.ts",
     "gen-items": "ts-node src/scripts/gen-items.ts",
     "clean": "rm -rf .build"
   },
