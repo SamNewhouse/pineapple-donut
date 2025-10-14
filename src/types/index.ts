@@ -26,3 +26,13 @@ export interface Trade {
   rejectedAt?: string;
   cancelledAt?: string;
 }
+
+export interface Player {
+  playerId: string;
+  email: string;
+  username: string;
+  score: number;
+  totalScans: number;
+  createdAt: string;
+  token?: string;
+}

@@ -2,8 +2,8 @@ import { APIGatewayProxyHandler } from "aws-lambda";
 import * as crypto from "crypto";
 import { parseBody, badRequest, conflict, success, handleError } from "../../core/http";
 import * as Dynamodb from "../../core/dynamodb";
-import { Tables } from "../../types";
-import { hashPassword } from "../../core/auth";
+import { Tables, Player } from "../../types"; // Import Player type
+import { hashPassword, generateToken } from "../../core/auth";
 
 export const signup: APIGatewayProxyHandler = async (event) => {
   try {
@@ -25,23 +25,31 @@ export const signup: APIGatewayProxyHandler = async (event) => {
     }
 
     const playerId = crypto.randomUUID();
+    const username = email.split("@")[0];
     const passwordHash = hashPassword(password);
+    const createdAt = new Date().toISOString();
 
-    await Dynamodb.put(Tables.Players, {
+    const player: Player = {
       playerId,
       email,
-      passwordHash,
-      username: email.split("@")[0],
+      username,
       score: 0,
       totalScans: 0,
-      createdAt: new Date().toISOString(),
+      createdAt,
+    };
+
+    await Dynamodb.put(Tables.Players, {
+      ...player,
+      passwordHash,
     });
+
+    // Generate JWT token for autologin
+    const token = generateToken({ playerId, email, username });
 
     return success(
       {
-        playerId,
-        email,
-        username: email.split("@")[0],
+        ...player,
+        token,
       },
       201,
       "Account created successfully",

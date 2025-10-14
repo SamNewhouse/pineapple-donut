@@ -1,4 +1,3 @@
-// src/core/auth.ts
 import * as jwt from "jsonwebtoken";
 import { UserToken } from "../types";
 import * as crypto from "crypto";
