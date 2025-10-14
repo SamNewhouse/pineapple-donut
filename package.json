@@ -20,7 +20,8 @@
   "dependencies": {
     "aws-sdk": "^2.1692.0",
     "google-auth-library": "^10.4.0",
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "random-words": "^2.0.1"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.119",
