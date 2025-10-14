@@ -2,8 +2,9 @@ import { APIGatewayProxyHandler } from "aws-lambda";
 import * as crypto from "crypto";
 import { parseBody, badRequest, conflict, success, handleError } from "../../core/http";
 import * as Dynamodb from "../../core/dynamodb";
-import { Tables, Player } from "../../types"; // Import Player type
+import { Tables, Player } from "../../types";
 import { hashPassword, generateToken } from "../../core/auth";
+import { count, generate } from "random-words";
 
 export const signup: APIGatewayProxyHandler = async (event) => {
   try {
@@ -24,8 +25,11 @@ export const signup: APIGatewayProxyHandler = async (event) => {
       return conflict("User already exists");
     }
 
+    const word = generate({ exactly: 2, join: "-" });
+    const number = count({ minLength: 3, maxLength: 6 });
+
     const playerId = crypto.randomUUID();
-    const username = email.split("@")[0];
+    const username = `${word}${number}`;
     const passwordHash = hashPassword(password);
     const createdAt = new Date().toISOString();
 
@@ -33,7 +37,6 @@ export const signup: APIGatewayProxyHandler = async (event) => {
       playerId,
       email,
       username,
-      score: 0,
       totalScans: 0,
       createdAt,
     };
