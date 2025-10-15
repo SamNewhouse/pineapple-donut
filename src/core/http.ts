@@ -1,3 +1,5 @@
+import axios, { AxiosResponse, AxiosError } from "axios";
+
 /**
  * Standard HTTP response structure for API Gateway Lambda functions
  */
@@ -26,6 +28,16 @@ const defaultHeaders = {
   "Access-Control-Allow-Headers": "Content-Type,Authorization",
   "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
 };
+
+/**
+ * Default Axios instance with common configuration
+ */
+const httpClient = axios.create({
+  timeout: 30000, // 30 second timeout
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
 
 /**
  * Creates a successful HTTP response with data
@@ -131,6 +143,100 @@ export function parseBody<T = any>(body: string | null): T {
 }
 
 /**
+ * Makes an HTTP GET request using Axios
+ * @param url - The URL to make the GET request to
+ * @param headers - Optional additional headers
+ * @returns Promise resolving to the response data
+ */
+export async function get<T = any>(url: string, headers?: Record<string, string>): Promise<T> {
+  try {
+    const response: AxiosResponse<T> = await httpClient.get(url, { headers });
+    return response.data;
+  } catch (err) {
+    throw handleAxiosError(err);
+  }
+}
+
+/**
+ * Makes an HTTP POST request using Axios
+ * @param url - The URL to make the POST request to
+ * @param data - The data to send in the request body
+ * @param headers - Optional additional headers
+ * @returns Promise resolving to the response data
+ */
+export async function post<T = any>(
+  url: string,
+  data?: any,
+  headers?: Record<string, string>,
+): Promise<T> {
+  try {
+    const response: AxiosResponse<T> = await httpClient.post(url, data, { headers });
+    return response.data;
+  } catch (err) {
+    throw handleAxiosError(err);
+  }
+}
+
+/**
+ * Makes an HTTP PUT request using Axios
+ * @param url - The URL to make the PUT request to
+ * @param data - The data to send in the request body
+ * @param headers - Optional additional headers
+ * @returns Promise resolving to the response data
+ */
+export async function put<T = any>(
+  url: string,
+  data?: any,
+  headers?: Record<string, string>,
+): Promise<T> {
+  try {
+    const response: AxiosResponse<T> = await httpClient.put(url, data, { headers });
+    return response.data;
+  } catch (err) {
+    throw handleAxiosError(err);
+  }
+}
+
+/**
+ * Makes an HTTP DELETE request using Axios
+ * @param url - The URL to make the DELETE request to
+ * @param headers - Optional additional headers
+ * @returns Promise resolving to the response data
+ */
+export async function del<T = any>(url: string, headers?: Record<string, string>): Promise<T> {
+  try {
+    const response: AxiosResponse<T> = await httpClient.delete(url, { headers });
+    return response.data;
+  } catch (err) {
+    throw handleAxiosError(err);
+  }
+}
+
+/**
+ * Handles Axios errors and converts them to standardized Error objects
+ * @param err - The Axios error or unknown error
+ * @returns A standardized Error object
+ */
+function handleAxiosError(err: unknown): Error {
+  if (axios.isAxiosError(err)) {
+    const axiosError = err as AxiosError;
+
+    if (axiosError.response) {
+      // Server responded with error status
+      return new Error(`HTTP ${axiosError.response.status}: ${axiosError.response.statusText}`);
+    } else if (axiosError.request) {
+      // Request was made but no response received
+      return new Error("Network error: No response received");
+    } else {
+      // Something else happened
+      return new Error(`Request error: ${axiosError.message}`);
+    }
+  }
+
+  return new Error("Unknown HTTP error");
+}
+
+/**
  * Converts caught errors into standardized HTTP error responses
  * Automatically maps common error types to appropriate status codes
  * @param err - The caught error (unknown type for safety)
@@ -143,11 +249,22 @@ export function handleError(err: unknown): HttpResponse {
   if (err instanceof Error) {
     errorMessage = err.message;
 
-    // Map specific error messages to 400 Bad Request
+    // Map specific error messages to appropriate status codes
     if (err.message.includes("required") || err.message.includes("Invalid JSON")) {
       statusCode = 400;
+    } else if (err.message.includes("HTTP 401")) {
+      statusCode = 401;
+    } else if (err.message.includes("HTTP 403")) {
+      statusCode = 403;
+    } else if (err.message.includes("HTTP 404")) {
+      statusCode = 404;
+    } else if (err.message.includes("Network error")) {
+      statusCode = 503; // Service Unavailable
     }
   }
 
   return error(errorMessage, statusCode);
 }
+
+// Export the configured Axios instance for advanced usage
+export { httpClient };

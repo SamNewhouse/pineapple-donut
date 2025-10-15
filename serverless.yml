@@ -2,7 +2,8 @@ service: pineapple-donut
 
 provider:
   name: aws
-  runtime: nodejs18.x
+  runtime: nodejs20.x
+  region: eu-west-2
   stage: ${opt:stage, 'dev'}
   environment:
     DYNAMODB_PLAYERS: Players
@@ -12,6 +13,10 @@ provider:
     JWT_SECRET: ${env:JWT_SECRET, 'dev-secret-change-in-production'}
     DYNAMODB_ENDPOINT: ${env:DYNAMODB_ENDPOINT, ''}
     STAGE: ${self:provider.stage}
+
+package:
+  patterns:
+    - "!src/scripts/**"
 
 plugins:
   - serverless-offline
@@ -77,14 +82,6 @@ functions:
           method: post
           cors: true
 
-  scan--validate:
-    handler: src/handlers/game/scan.validateScan
-    events:
-      - http:
-          path: scan/validate
-          method: post
-          cors: true
-
   # Item Management
   item--get:
     handler: src/handlers/game/items.getItem
@@ -93,7 +90,7 @@ functions:
           path: item/{itemId}
           method: get
           cors: true
-          
+
   # Trading System
   trade--get:
     handler: src/handlers/game/trading.getTrade

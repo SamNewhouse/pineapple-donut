@@ -1,12 +1,73 @@
 import { APIGatewayProxyHandler } from "aws-lambda";
 import { success, badRequest, notFound, error, parseBody, handleError } from "../../core/http";
 import * as Dynamodb from "../../core/dynamodb";
-import { Tables } from "../../types";
+import { Tables, Trade, TradeStatus } from "../../types";
 import { parseAuthToken } from "../../core/auth";
-import * as crypto from "crypto";
+import { randomUUID } from "crypto";
 
 /**
- * Create a new trade offer between players
+ * Validate that all provided itemIds exist and are owned by the expected player.
+ *
+ * Used to ensure integrity of trade offers and to prevent unauthorized item use.
+ *
+ * @param itemIds           - Array of item IDs to validate
+ * @param expectedPlayerId  - The expected owner/player ID for all these items
+ * @returns Promise<boolean> - true if all items exist and ownership is correct
+ */
+async function validateItemOwnership(
+  itemIds: string[],
+  expectedPlayerId: string,
+): Promise<boolean> {
+  const items = await Promise.all(itemIds.map((itemId) => Dynamodb.get(Tables.Items, { itemId })));
+  return items.every((item) => item && item.playerId === expectedPlayerId);
+}
+
+/**
+ * After a successful trade, cancel any other pending trades that reference the items just transferred.
+ *
+ * This keeps the trades system clean and prevents "zombie" trades where the items are no longer available.
+ *
+ * @param completedTradeId - The ID of the trade just completed
+ * @param movedItemIds     - The item IDs that changed ownership
+ * @returns Promise<void>
+ */
+async function cancelConflictingTrades(completedTradeId: string, movedItemIds: string[]) {
+  const allTrades = await Dynamodb.scan(Tables.Trades);
+  const conflictingTrades = allTrades.filter(
+    (trade) =>
+      trade.tradeId !== completedTradeId &&
+      trade.status === TradeStatus.PENDING &&
+      (trade.offeredItemIds.some((id: string) => movedItemIds.includes(id)) ||
+        trade.requestedItemIds.some((id: string) => movedItemIds.includes(id))),
+  );
+  await Promise.all(
+    conflictingTrades.map((trade) =>
+      Dynamodb.update(
+        Tables.Trades,
+        { tradeId: trade.tradeId },
+        "SET status = :status, cancelledAt = :cancelledAt, cancelReason = :reason",
+        {
+          ":status": TradeStatus.CANCELLED,
+          ":cancelledAt": new Date().toISOString(),
+          ":reason": "Item(s) involved have already been traded",
+        },
+      ),
+    ),
+  );
+}
+
+/**
+ * Create a new trade offer between players.
+ *
+ * Flow:
+ * 1. Parse and validate request parameters.
+ * 2. Authenticate the requesting user.
+ * 3. Validate item ownership for both trade parties.
+ * 4. Create a pending trade record.
+ * 5. Return the trade for client confirmation.
+ *
+ * @param event - API Gateway event with trade details in body and auth token in headers
+ * @returns Success response with created trade object or error
  */
 export const createTrade: APIGatewayProxyHandler = async (event) => {
   try {
@@ -14,243 +75,227 @@ export const createTrade: APIGatewayProxyHandler = async (event) => {
     const { toPlayerId, offeredItemIds, requestedItemIds } = parseBody(event.body);
 
     if (!toPlayerId || !offeredItemIds || !requestedItemIds) {
-      return badRequest("toPlayerId, offeredItemIds, and requestedItemIds required");
+      return badRequest("toPlayerId, offeredItemIds, and requestedItemIds are required");
     }
-
     if (!Array.isArray(offeredItemIds) || !Array.isArray(requestedItemIds)) {
       return badRequest("offeredItemIds and requestedItemIds must be arrays");
     }
-
-    // Verify player owns the offered items
-    const offeredItems = await Promise.all(
-      offeredItemIds.map((itemId) => Dynamodb.get(Tables.Items, { itemId })),
-    );
-
-    const invalidItems = offeredItems.filter(
-      (item) => !item || item.playerId !== currentUser.playerId,
-    );
-    if (invalidItems.length > 0) {
-      return badRequest("You can only trade items you own");
+    if (offeredItemIds.length === 0 || requestedItemIds.length === 0) {
+      return badRequest("Both offered and requested items must contain at least one item");
+    }
+    if (toPlayerId === currentUser.playerId) {
+      return badRequest("You cannot trade with yourself");
     }
 
-    // Verify requested items belong to target player
-    const requestedItems = await Promise.all(
-      requestedItemIds.map((itemId) => Dynamodb.get(Tables.Items, { itemId })),
-    );
+    const [offeredValid, requestedValid] = await Promise.all([
+      validateItemOwnership(offeredItemIds, currentUser.playerId),
+      validateItemOwnership(requestedItemIds, toPlayerId),
+    ]);
 
-    const invalidRequested = requestedItems.filter((item) => !item || item.playerId !== toPlayerId);
-    if (invalidRequested.length > 0) {
-      return badRequest("Requested items must belong to the target player");
-    }
+    if (!offeredValid) return badRequest("You can only trade items you own");
+    if (!requestedValid) return badRequest("Requested items must belong to the target player");
 
-    const tradeId = crypto.randomUUID();
-    const trade = {
-      tradeId,
+    const trade: Trade = {
+      tradeId: randomUUID(),
       fromPlayerId: currentUser.playerId,
       toPlayerId,
       offeredItemIds,
       requestedItemIds,
-      status: "pending",
+      status: TradeStatus.PENDING,
       createdAt: new Date().toISOString(),
     };
 
     await Dynamodb.put(Tables.Trades, trade);
-
     return success(trade, 201, "Trade offer created successfully");
-  } catch (error) {
-    return handleError(error);
+  } catch (err) {
+    return handleError(err);
   }
 };
 
 /**
- * Accept a trade offer
+ * Accept a trade offer and atomically perform the item transfer.
+ * Cancels any other pending trades that reference the transferred items.
+ *
+ * Flow:
+ * 1. Parse and validate parameters.
+ * 2. Authenticate accepting user.
+ * 3. Verify pending status and ownership.
+ * 4. Atomically swap item ownership and mark trade as completed.
+ * 5. Cancel conflicting trades with the same items.
+ * 6. Return confirmation.
+ *
+ * @param event - API Gateway event with tradeId in path and auth token
+ * @returns Success response or error
  */
 export const acceptTrade: APIGatewayProxyHandler = async (event) => {
   try {
     const currentUser = parseAuthToken(event.headers.Authorization);
     const tradeId = event.pathParameters?.tradeId;
 
-    if (!tradeId) {
-      return badRequest("tradeId required");
-    }
-
+    if (!tradeId) return badRequest("tradeId is required");
     const trade = await Dynamodb.get(Tables.Trades, { tradeId });
-
-    if (!trade) {
-      return notFound("Trade not found");
-    }
-
+    if (!trade) return notFound("Trade not found");
     if (trade.toPlayerId !== currentUser.playerId) {
       return error("You can only accept trades offered to you", 403);
     }
-
-    if (trade.status !== "pending") {
-      return badRequest("Trade is no longer pending");
+    if (trade.status !== TradeStatus.PENDING) {
+      return badRequest(`Trade is ${trade.status}, not pending`);
     }
 
-    // Transfer items
-    const updates = [];
+    const [offeredValid, requestedValid] = await Promise.all([
+      validateItemOwnership(trade.offeredItemIds, trade.fromPlayerId),
+      validateItemOwnership(trade.requestedItemIds, trade.toPlayerId),
+    ]);
+    if (!offeredValid || !requestedValid) {
+      return badRequest(
+        "One or more items in this trade are no longer owned by the correct player. This trade cannot be completed.",
+      );
+    }
 
-    // Transfer offered items to accepting player
-    for (const itemId of trade.offeredItemIds) {
-      updates.push(
+    const updates = [
+      ...trade.offeredItemIds.map((itemId: string) =>
         Dynamodb.update(Tables.Items, { itemId }, "SET playerId = :newOwner", {
           ":newOwner": currentUser.playerId,
         }),
-      );
-    }
-
-    // Transfer requested items to offering player
-    for (const itemId of trade.requestedItemIds) {
-      updates.push(
+      ),
+      ...trade.requestedItemIds.map((itemId: string) =>
         Dynamodb.update(Tables.Items, { itemId }, "SET playerId = :newOwner", {
           ":newOwner": trade.fromPlayerId,
         }),
-      );
-    }
-
-    // Update trade status
-    updates.push(
+      ),
       Dynamodb.update(
         Tables.Trades,
         { tradeId },
-        "SET #status = :status, completedAt = :completedAt",
+        "SET status = :status, completedAt = :completedAt",
         {
-          ":status": "completed",
+          ":status": TradeStatus.COMPLETED,
           ":completedAt": new Date().toISOString(),
         },
       ),
-    );
-
+    ];
     await Promise.all(updates);
 
+    const movedItemIds = [...trade.offeredItemIds, ...trade.requestedItemIds];
+    await cancelConflictingTrades(tradeId, movedItemIds);
+
     return success({ message: "Trade completed successfully" });
-  } catch (error) {
-    return handleError(error);
+  } catch (err) {
+    return handleError(err);
   }
 };
 
 /**
- * Reject a trade offer
+ * Reject a trade offer (by recipient).
+ * Marks the trade as REJECTED. No items are moved.
+ *
+ * Validations:
+ *  - Only trade recipient can reject
+ *  - Trade must be pending
+ *
+ * @param event - API Gateway event with tradeId in path and auth token
+ * @returns Success response or error
  */
 export const rejectTrade: APIGatewayProxyHandler = async (event) => {
   try {
     const currentUser = parseAuthToken(event.headers.Authorization);
     const tradeId = event.pathParameters?.tradeId;
 
-    if (!tradeId) {
-      return badRequest("tradeId required");
-    }
-
+    if (!tradeId) return badRequest("tradeId is required");
     const trade = await Dynamodb.get(Tables.Trades, { tradeId });
-
-    if (!trade) {
-      return notFound("Trade not found");
-    }
-
+    if (!trade) return notFound("Trade not found");
     if (trade.toPlayerId !== currentUser.playerId) {
       return error("You can only reject trades offered to you", 403);
     }
-
-    if (trade.status !== "pending") {
-      return badRequest("Trade is no longer pending");
+    if (trade.status !== TradeStatus.PENDING) {
+      return badRequest(`Trade is ${trade.status}, not pending`);
     }
-
     await Dynamodb.update(
       Tables.Trades,
       { tradeId },
-      "SET #status = :status, rejectedAt = :rejectedAt",
+      "SET status = :status, rejectedAt = :rejectedAt",
       {
-        ":status": "rejected",
+        ":status": TradeStatus.REJECTED,
         ":rejectedAt": new Date().toISOString(),
       },
     );
-
     return success({ message: "Trade rejected" });
-  } catch (error) {
-    return handleError(error);
+  } catch (err) {
+    return handleError(err);
   }
 };
 
 /**
- * Cancel a trade offer (by the creator)
+ * Cancel a trade offer (by creator).
+ * Marks the trade as CANCELLED.
+ *
+ * Validations:
+ *  - Only original sender may cancel
+ *  - Trade must be pending
+ *
+ * @param event - API Gateway event with tradeId in path and auth token
+ * @returns Success response or error
  */
 export const cancelTrade: APIGatewayProxyHandler = async (event) => {
   try {
     const currentUser = parseAuthToken(event.headers.Authorization);
     const tradeId = event.pathParameters?.tradeId;
 
-    if (!tradeId) {
-      return badRequest("tradeId required");
-    }
-
+    if (!tradeId) return badRequest("tradeId is required");
     const trade = await Dynamodb.get(Tables.Trades, { tradeId });
-
-    if (!trade) {
-      return notFound("Trade not found");
-    }
-
+    if (!trade) return notFound("Trade not found");
     if (trade.fromPlayerId !== currentUser.playerId) {
       return error("You can only cancel trades you created", 403);
     }
-
-    if (trade.status !== "pending") {
-      return badRequest("Trade is no longer pending");
+    if (trade.status !== TradeStatus.PENDING) {
+      return badRequest(`Trade is ${trade.status}, not pending`);
     }
-
     await Dynamodb.update(
       Tables.Trades,
       { tradeId },
-      "SET #status = :status, cancelledAt = :cancelledAt",
+      "SET status = :status, cancelledAt = :cancelledAt",
       {
-        ":status": "cancelled",
+        ":status": TradeStatus.CANCELLED,
         ":cancelledAt": new Date().toISOString(),
       },
     );
-
     return success({ message: "Trade cancelled" });
-  } catch (error) {
-    return handleError(error);
+  } catch (err) {
+    return handleError(err);
   }
 };
 
 /**
- * Get details of a specific trade
+ * Fetch details of a specific trade, including:
+ * - Trade record
+ * - Full item data for offered/requested bundles
+ * - Player usernames (for display only)
+ *
+ * @param event - API Gateway event with tradeId in path
+ * @returns Success response with enriched trade data or error
  */
 export const getTrade: APIGatewayProxyHandler = async (event) => {
   try {
     const tradeId = event.pathParameters?.tradeId;
 
-    if (!tradeId) {
-      return badRequest("tradeId required");
-    }
-
+    if (!tradeId) return badRequest("tradeId is required");
     const trade = await Dynamodb.get(Tables.Trades, { tradeId });
+    if (!trade) return notFound("Trade not found");
 
-    if (!trade) {
-      return notFound("Trade not found");
-    }
-
-    // Get details of all items involved in the trade
-    const [offeredItems, requestedItems] = await Promise.all([
+    const [offeredItems, requestedItems, fromPlayer, toPlayer] = await Promise.all([
       Promise.all(
         trade.offeredItemIds.map((itemId: string) => Dynamodb.get(Tables.Items, { itemId })),
       ),
       Promise.all(
         trade.requestedItemIds.map((itemId: string) => Dynamodb.get(Tables.Items, { itemId })),
       ),
-    ]);
-
-    // Get player details for context
-    const [fromPlayer, toPlayer] = await Promise.all([
       Dynamodb.get(Tables.Players, { playerId: trade.fromPlayerId }),
       Dynamodb.get(Tables.Players, { playerId: trade.toPlayerId }),
     ]);
 
     return success({
       ...trade,
-      offeredItems: offeredItems.filter((item) => item), // Filter out null items
-      requestedItems: requestedItems.filter((item) => item), // Filter out null items
+      offeredItems: offeredItems.filter(Boolean),
+      requestedItems: requestedItems.filter(Boolean),
       fromPlayer: fromPlayer
         ? {
             playerId: fromPlayer.playerId,
@@ -264,44 +309,45 @@ export const getTrade: APIGatewayProxyHandler = async (event) => {
           }
         : null,
     });
-  } catch (error) {
-    return handleError(error);
+  } catch (err) {
+    return handleError(err);
   }
 };
 
 /**
- * Get all trades for a player (both offered and received)
+ * List all trades involving a player (sent or received).
+ *
+ * Returns trades sent by this player and received by this player, for dashboards or history.
+ *
+ * @param event - API Gateway event with playerId in path
+ * @returns Success response with trade lists and summary count or error
  */
 export const getPlayerTrades: APIGatewayProxyHandler = async (event) => {
   try {
     const playerId = event.pathParameters?.playerId;
+    if (!playerId) return badRequest("playerId is required");
 
-    if (!playerId) {
-      return badRequest("playerId required");
-    }
-
-    // Get trades where player is the sender
-    const sentTrades = await Dynamodb.query(
-      Tables.Trades,
-      "fromPlayerId = :playerId",
-      { ":playerId": playerId },
-      "FromPlayerIndex",
-    );
-
-    // Get trades where player is the receiver
-    const receivedTrades = await Dynamodb.query(
-      Tables.Trades,
-      "toPlayerId = :playerId",
-      { ":playerId": playerId },
-      "ToPlayerIndex",
-    );
+    const [sentTrades, receivedTrades] = await Promise.all([
+      Dynamodb.query(
+        Tables.Trades,
+        "fromPlayerId = :playerId",
+        { ":playerId": playerId },
+        "FromPlayerIndex",
+      ),
+      Dynamodb.query(
+        Tables.Trades,
+        "toPlayerId = :playerId",
+        { ":playerId": playerId },
+        "ToPlayerIndex",
+      ),
+    ]);
 
     return success({
       sentTrades,
       receivedTrades,
       totalTrades: sentTrades.length + receivedTrades.length,
     });
-  } catch (error) {
-    return handleError(error);
+  } catch (err) {
+    return handleError(err);
   }
 };
