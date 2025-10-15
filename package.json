@@ -9,28 +9,32 @@
     "deploy": "serverless deploy",
     "offline": "serverless offline --stage dev",
     "dynamo": "docker compose up -d",
+    "dynamo:reset": "docker compose down -v && npm run dynamo",
     "table:create": "ts-node src/scripts/create-table.ts",
     "table:seed": "ts-node src/scripts/seed.ts",
-    "gen-items": "ts-node src/scripts/gen-items.ts",
-    "clean": "rm -rf .build"
+    "clean": "rm -rf .build",
+    "format": "prettier --write ."
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "aws-sdk": "^2.1692.0",
-    "google-auth-library": "^10.4.0",
-    "jsonwebtoken": "^9.0.2",
-    "random-words": "^2.0.1"
+    "@aws-sdk/client-dynamodb": "3.910.0",
+    "@aws-sdk/util-dynamodb": "3.910.0",
+    "axios": "1.12.2",
+    "dotenv": "^17.2.3",
+    "jsonwebtoken": "9.0.2",
+    "random-words": "2.0.1",
+    "uuid": "13.0.0"
   },
   "devDependencies": {
-    "@types/aws-lambda": "^8.10.119",
-    "@types/jsonwebtoken": "^9.0.10",
-    "@types/node": "^24.6.2",
-    "@types/uuid": "^10.0.0",
-    "prettier": "^3.6.2",
-    "serverless": "^4.20.2",
-    "serverless-offline": "^14.4.0",
-    "typescript": "^5.9.3"
+    "@types/aws-lambda": "8.10.155",
+    "@types/dotenv": "^6.1.1",
+    "@types/jsonwebtoken": "9.0.10",
+    "@types/node": "24.7.2",
+    "prettier": "3.6.2",
+    "serverless": "4.20.2",
+    "serverless-offline": "14.4.0",
+    "typescript": "5.9.3"
   }
 }

@@ -2,16 +2,40 @@ export enum Tables {
   Items = "Items",
   ItemCatalog = "ItemCatalog",
   Players = "Players",
-  Sessions = "Sessions",
   Trades = "Trades",
 }
 
-export interface UserToken {
+export interface Item {
+  itemId: string;
+  catalogItemId: string;
+  playerId: string;
+  foundAt: string;
+}
+
+export interface CatalogItem {
+  itemId: string;
+  name: string;
+  description: string;
+  rarity: string;
+  rarityChance: number;
+  rarityColor: string;
+  imageUrl?: string;
+  createdAt: string;
+}
+
+export interface PlayerToken {
   playerId: string;
   email: string;
   username: string;
   iat: number;
   exp?: number;
+}
+
+export enum TradeStatus {
+  PENDING = "pending",
+  COMPLETED = "completed",
+  REJECTED = "rejected",
+  CANCELLED = "cancelled",
 }
 
 export interface Trade {
@@ -20,7 +44,7 @@ export interface Trade {
   toPlayerId: string;
   offeredItemIds: string[];
   requestedItemIds: string[];
-  status: "pending" | "completed" | "rejected" | "cancelled";
+  status: TradeStatus;
   createdAt: string;
   completedAt?: string;
   rejectedAt?: string;
@@ -34,4 +58,5 @@ export interface Player {
   totalScans: number;
   createdAt: string;
   token?: string;
+  passwordHash?: string;
 }
