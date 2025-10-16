@@ -11,9 +11,9 @@ services:
     volumes:
       - dynamodb_data:/home/dynamodblocal/data
     environment:
-      - AWS_ACCESS_KEY_ID=dummy
-      - AWS_SECRET_ACCESS_KEY=dummy
-      - AWS_DEFAULT_REGION=eu-west-1
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:dummy}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:dummy}
+      - AWS_REGION=${AWS_REGION:eu-west-2}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/"]
       interval: 10s
@@ -27,10 +27,10 @@ services:
     ports:
       - "8001:8001"
     environment:
-      - DYNAMO_ENDPOINT=http://dynamodb-local:8000
-      - AWS_REGION=eu-west-1
-      - AWS_ACCESS_KEY_ID=dummy
-      - AWS_SECRET_ACCESS_KEY=dummy
+      - DYNAMO_ENDPOINT=${DYNAMO_ENDPOINT:http://localhost:8000}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:dummy}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:dummy}
+      - AWS_REGION=${AWS_REGION:eu-west-2}
     links:
       - dynamodb-local
 
