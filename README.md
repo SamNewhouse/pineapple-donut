@@ -86,66 +86,73 @@ To allow the API (running locally or on a private server) to be accessible by re
 
 This is particularly useful during development and testing, or for accessing the API from a deployed tunnel-based version of your app.
 
-#### Setup Instructions
+---
+
+#### **Setup Instructions**
 
 1. **Install [cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/)**
+   `npm install -g cloudflared`
 
-```bash
-npm install -g cloudflared
-# or
-brew install cloudflare/cloudflare/cloudflared
-```
+2. **Authenticate and create a tunnel in your Cloudflare dashboard.**  
+   Obtain your tunnel token and save it in a `~/.cloudflared/tunnel-token.txt` file in your home directory.
 
-2. **Authenticate and create a tunnel in your Cloudflare dashboard**, then obtain your tunnel token.
-3. **Run the tunnel, pointing to the local API server:**
+> **Tip:**  
+> The tunnel token can be generated via the Cloudflare dashboard or CLI.  
+> You can read more in the [Cloudflare Tunnel docs](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/).
 
-```bash
-cloudflared tunnel run --token <YOUR_CLOUDFLARE_TUNNEL_TOKEN>
-```
+3. **Run the tunnel, pointing to your local API server:**
 
-By default, this will expose your API running on `http://localhost:3000` to a public URL via Cloudflare's secure infrastructure.
+The included `start.sh` script automatically loads your token from `~/.cloudflared/tunnel-token.txt` and exposes your local API (by default on `http://localhost:3000`) through Cloudflare’s network.  
+The assigned public URL will appear in the Cloudflared logs (`~/.cloudflared/cloudflared.log`) once the tunnel is live.
+
 4. **Update your frontend app or clients to use the generated public tunnel URL for API calls.**
 
-> **Note:**
-> Always keep your token secure. Only share tunnel URLs with trusted clients.
+> **Note:**  
+> Make sure `~/.cloudflared/tunnel-token.txt` exists and contains your tunnel token.  
+> **Never commit your tunnel token to source control or share it publicly.**  
+> Keep the file secure in your home directory.
 
-### Local Development
+---
 
-Start local DynamoDB:
+### 🚀 Local Development Workflow
 
-```bash
-npm run dynamo
-```
-
-Create database tables:
+Start or stop your local environment using the provided scripts:
 
 ```bash
-npm run table:create
+chmod +x start.sh stop.sh   # Give the executable files the right permissions
+./start.sh                  # Starts DynamoDB (if used locally), Cloudflare tunnel, and your backend API
+./stop.sh                   # Stops the Cloudflare tunnel and shuts down DynamoDB
 ```
 
-Seed database with sample data (optional):
+**What happens when you run the scripts?**
 
-```bash
-npm run table:seed
-```
+- `start.sh`:
+  - Checks for required tools (cloudflared, Docker, npm) and your tunnel token file.
+  - Starts local DynamoDB (if used), then launches the tunnel exposing your API securely.
+  - Installs dependencies, formats code, cleans builds, compiles, and finally starts your backend server.
+  - Prints friendly, readable progress with status messages in your terminal.
 
-Start the dev server:
-
-```bash
-npm start  # API available at http://localhost:3000
-```
+- `stop.sh`:
+  - Gracefully shuts down local DynamoDB (if used).
+  - Stops any running Cloudflared tunnel processes.
+  - Provides status and guidance if manual steps are needed.
 
 #### Available Scripts
 
-- `npm start` — Build and start Serverless Offline
-- `npm run build` — Compile TypeScript
-- `npm run deploy` — Deploy to AWS
-- `npm run offline` — Run serverless offline
-- `npm run dynamo` — Start local DynamoDB
-- `npm run dynamo:reset` — Reset local DynamoDB
-- `npm run table:create` — Create tables
-- `npm run table:seed` — Seed tables
-- `npm run clean` — Clean build artifacts
+- `npm run start` — Build and start Serverless Offline (local API)
+- `npm run build` — Compile TypeScript sources
+- `npm run deploy` — Deploy the project to AWS using Serverless
+- `npm run offline` — Run Serverless Offline for local development
+- `npm run dynamo:up` — **Start local DynamoDB** (Docker background)
+- `npm run dynamo:down` — **Stop local DynamoDB** (data preserved)
+- `npm run dynamo:destroy` — **Remove local DynamoDB and delete data** (clean volumes)
+- `npm run dynamo:reset` — **Destroy and restart DynamoDB** (fresh instance)
+- `npm run table:create` — Create DynamoDB tables (after DB is running)
+- `npm run table:seed` — Seed database tables with example/sample data
+- `npm run clean` — Remove build artifacts (cleanup)
+- `npm run format` — Format codebase using Prettier
+
+> See above for details on Cloudflare Tunnel integration and local API exposure!
 
 ---
 
