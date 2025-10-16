@@ -14,6 +14,6 @@
     "sourceMap": true,
     "types": ["node", "aws-lambda"]
   },
-  "include": ["src/**/*.ts", "src/scripts/create-table.ts"],
-  "exclude": ["node_modules", ".build", ".serverless", "src/scripts/**.ts"]
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", ".build", ".serverless"]
 }
