@@ -1,18 +1,22 @@
 # 🍩 Pineapple Donut
 
-A serverless backend API built with AWS Lambda and the Serverless Framework, providing authentication, item management, and trading functionality for the Pineapple game ecosystem.
+A serverless backend API for the Pineapple game ecosystem, built with AWS Lambda, DynamoDB, and the Serverless Framework. This API supports player authentication, item management, trading, and dynamic item rarity, with local and cloud deployment options.
+
+---
 
 ## 📂 Project Structure
 
 ```
-src/
-├── core/         # Core utilities and configurations
-├── handlers/     # Lambda function handlers
-│   ├── auth/     # Authentication endpoints
-│   └── game/     # Game-related endpoints
-├── scripts/      # Database setup and utility scripts
-└── types/        # TypeScript type definitions
+src
+├── config      # Configuration files for environment variables and app settings
+├── core        # Core utilities: authentication, database, and HTTP helpers
+├── data        # Static data definitions (e.g., rarity tiers)
+├── handlers    # Lambda function endpoints (API logic for auth, game, trading)
+├── scripts     # Database creation, seeding, and utility scripts
+└── types       # Shared TypeScript type and interface definitions
 ```
+
+---
 
 ## 🔧 Architecture
 
@@ -23,101 +27,127 @@ src/
 - **Items**: Player-owned item instances
 - **Trades**: Trading transactions between players
 
-### API Endpoints
+Each table uses a primary key, plus various GSIs for query efficiency (see schema section below).
 
-#### Authentication
+---
 
-- `POST /auth/signup` - Create new player account
-- `POST /auth/login` - Player authentication
-- `GET /player/{playerId}` - Get player profile
+## 📊 API Endpoints
 
-#### Game Features
+**Authentication:**
 
-- `POST /scan/validate` - Validate scanned item
-- `POST /scan/process` - Process item scan and add to inventory
-- `GET /player/{playerId}/items` - Get player's items
-- `GET /item/{itemId}` - Get specific item details
+- `POST /auth/signup` — Create a new player account
+- `POST /auth/login` — Authenticate player (JWT)
+- `GET /player/{playerId}` — Fetch player profile
 
-#### Trading System
+**Game Features:**
 
-- `POST /trade/create` - Create new trade offer
-- `GET /trade/{tradeId}` - Get trade details
-- `POST /trade/{tradeId}/accept` - Accept trade offer
-- `POST /trade/{tradeId}/reject` - Reject trade offer
-- `POST /trade/{tradeId}/cancel` - Cancel trade offer
-- `GET /player/{playerId}/trades` - Get player's trades
+- `POST /scan/process` — Add scanned item to player inventory
+- `GET /player/{playerId}/items` — List all items for a player
+- `GET /item/{itemId}` — Get details for a specific item
+
+**Trading System:**
+
+- `POST /trade/create` — Create a trade offer
+- `GET /trade/{tradeId}` — Get trade details
+- `POST /trade/{tradeId}/accept` — Accept trade offer
+- `POST /trade/{tradeId}/reject` — Reject trade offer
+- `POST /trade/{tradeId}/cancel` — Cancel trade offer
+- `GET /player/{playerId}/trades` — Get all trades for a player
+
+---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
-- Node.js (v18 or higher)
+- Node.js (v20+)
 - npm
-- AWS CLI configured
-- Docker & Docker Compose
+- AWS CLI (configured)
+- Docker (for local DynamoDB)
 - Serverless CLI (`npm install -g serverless`)
 
 ### Installation
 
-1. Clone the repository:
-
 ```bash
 git clone https://github.com/SamNewhouse/pineapple-donut.git
 cd pineapple-donut
-```
-
-2. Install dependencies:
-
-```bash
 npm install
 ```
 
-3. Set up environment variables:
+Setup local environment variables (in `.env` or your shell):
 
 ```bash
-JWT_SECRET="your-jwt-secret"
-DYNAMODB_ENDPOINT="http://localhost:8000"  # for local development
+cp .env.example .env
 ```
+
+### 🌐 Secure API Access with Cloudflare Tunnel
+
+To allow the API (running locally or on a private server) to be accessible by remote clients and your frontend app, you can use [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/) to expose your service securely without opening your firewall or deploying to the cloud.
+
+This is particularly useful during development and testing, or for accessing the API from a deployed tunnel-based version of your app.
+
+#### Setup Instructions
+
+1. **Install [cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/)**
+
+```bash
+npm install -g cloudflared
+# or
+brew install cloudflare/cloudflare/cloudflared
+```
+
+2. **Authenticate and create a tunnel in your Cloudflare dashboard**, then obtain your tunnel token.
+3. **Run the tunnel, pointing to the local API server:**
+
+```bash
+cloudflared tunnel run --token <YOUR_CLOUDFLARE_TUNNEL_TOKEN>
+```
+
+By default, this will expose your API running on `http://localhost:3000` to a public URL via Cloudflare's secure infrastructure.
+4. **Update your frontend app or clients to use the generated public tunnel URL for API calls.**
+
+> **Note:**
+> Always keep your token secure. Only share tunnel URLs with trusted clients.
 
 ### Local Development
 
-1. Start local DynamoDB:
+Start local DynamoDB:
 
 ```bash
 npm run dynamo
 ```
 
-2. Create database tables:
+Create database tables:
 
 ```bash
 npm run table:create
 ```
 
-3. Seed with sample data (optional):
+Seed database with sample data (optional):
 
 ```bash
 npm run table:seed
 ```
 
-4. Start the development server:
+Start the dev server:
 
 ```bash
-npm start
+npm start  # API available at http://localhost:3000
 ```
 
-The API will be available at `http://localhost:3000`
+#### Available Scripts
 
-### Available Scripts
+- `npm start` — Build and start Serverless Offline
+- `npm run build` — Compile TypeScript
+- `npm run deploy` — Deploy to AWS
+- `npm run offline` — Run serverless offline
+- `npm run dynamo` — Start local DynamoDB
+- `npm run dynamo:reset` — Reset local DynamoDB
+- `npm run table:create` — Create tables
+- `npm run table:seed` — Seed tables
+- `npm run clean` — Clean build artifacts
 
-- `npm start` - Build and start offline server
-- `npm run build` - Compile TypeScript
-- `npm run deploy` - Deploy to AWS
-- `npm run offline` - Start serverless offline
-- `npm run dynamo` - Start local DynamoDB
-- `npm run table:create` - Create database tables
-- `npm run table:seed` - Seed database with sample data
-- `npm run gen-items` - Generate random items
-- `npm run clean` - Clean build directory
+---
 
 ## 🌐 Deployment
 
@@ -127,25 +157,28 @@ Deploy to AWS:
 npm run deploy
 ```
 
-Deploy to specific stage:
+Deploy to a specific stage:
 
 ```bash
 serverless deploy --stage production
 ```
 
+---
+
 ## 🔒 Security
 
-- JWT tokens for API authentication
-- Google OAuth integration for user login
-- CORS enabled for cross-origin requests
-- Environment-based configuration for secrets
+- JWT authentication for endpoints
+- CORS enabled for APIs
+- Configurable secrets via environment variables
+
+---
 
 ## 📊 Database Schema
 
 ### Players Table
 
 - Primary Key: `playerId` (String)
-- GSI: `EmailIndex` on `email`
+- GSI: `EmailIndex` (for lookup by email)
 
 ### ItemCatalog Table
 
@@ -154,37 +187,27 @@ serverless deploy --stage production
 ### Items Table
 
 - Primary Key: `itemId` (String)
-- GSI: `PlayerIndex` on `playerId`
+- GSI: `PlayerIndex` (for lookup by `playerId`)
 
 ### Trades Table
 
 - Primary Key: `tradeId` (String)
-- GSI: `FromPlayerIndex` on `fromPlayerId`
-- GSI: `ToPlayerIndex` on `toPlayerId`
+- GSI: `FromPlayerIndex` (`fromPlayerId`)
+- GSI: `ToPlayerIndex` (`toPlayerId`)
+
+---
 
 ## 🧪 Testing
 
-The service can be tested locally using:
+- Serverless Offline for API endpoint testing
+- Docker Compose for local DynamoDB testing
+- Postman/curl recommended for manual endpoint verification
 
-- Serverless Offline for API endpoints
-- Docker Compose for DynamoDB
-- Postman/curl for endpoint testing
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📄 License
-
-This project is private and proprietary.
+---
 
 ## 👨‍💻 Author
 
 **Sam Newhouse**
 
-- Website: [www.samnewhouse.co.uk](https://www.samnewhouse.co.uk)
+- Website: www.samnewhouse.co.uk
 - GitHub: [@SamNewhouse](https://github.com/SamNewhouse)
