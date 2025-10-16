@@ -155,7 +155,7 @@ export const adjectives = [
  *
  * @returns {string} - A two-word item name suitable for display or lore.
  */
-export function generateItemName(): string {
+export function generateCollectableName(): string {
   const adjective = adjectives[Math.floor(Math.random() * adjectives.length)];
   const name = itemNames[Math.floor(Math.random() * itemNames.length)];
   return `${adjective} ${name}`;

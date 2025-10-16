@@ -85,7 +85,7 @@ export function hashPassword(password: string): string {
 export function generateToken(player: Player): string {
   return jwt.sign(
     {
-      playerId: player.playerId,
+      id: player.id,
       email: player.email,
       username: player.username,
     },

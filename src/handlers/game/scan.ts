@@ -1,7 +1,7 @@
 import { APIGatewayProxyHandler } from "aws-lambda";
 import { success, badRequest, error, parseBody, handleError } from "../../core/http";
 import * as Dynamodb from "../../core/dynamodb";
-import { Tables, CatalogItem, Item } from "../../types";
+import { Tables, Collectable, Item } from "../../types";
 import * as crypto from "crypto";
 import { rarityTiers } from "../../data/rarity";
 
@@ -33,24 +33,24 @@ export const processScan: APIGatewayProxyHandler = async (event) => {
     }
 
     // Retrieve all items from the catalog for random selection
-    const catalogItems: CatalogItem[] = await Dynamodb.scan(Tables.ItemCatalog);
+    const Collectables: Collectable[] = await Dynamodb.scan(Tables.Collectables);
 
     // Ensure catalog has items available for awarding
-    if (catalogItems.length === 0) {
+    if (Collectables.length === 0) {
       return error("No items in catalog", 500);
     }
 
     // Randomly select an item from the catalog
     // This is where the "discovery" element happens - players never know what they'll get
-    const randomIndex = Math.floor(Math.random() * catalogItems.length);
-    const winner: CatalogItem = catalogItems[randomIndex];
+    const randomIndex = Math.floor(Math.random() * Collectables.length);
+    const winner: Collectable = Collectables[randomIndex];
 
     // Create a unique item instance for this player
     // Each scan creates a new item record, even if it's the same catalog item
     const uniqueItemId = crypto.randomUUID();
     const itemRecord: Item = {
-      itemId: uniqueItemId,
-      catalogItemId: winner.itemId,
+      id: uniqueItemId,
+      collectableId: winner.id,
       playerId: playerId,
       foundAt: new Date().toISOString(),
     };
@@ -65,7 +65,7 @@ export const processScan: APIGatewayProxyHandler = async (event) => {
       {
         awardedItem: {
           itemId: uniqueItemId,
-          catalogItemId: winner.itemId,
+          ItemCatalogId: winner.id,
           name: winner.name,
           rarity: winner.rarity,
           rarityColor: rarityInfo?.color ?? null,

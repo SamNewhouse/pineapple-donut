@@ -69,7 +69,7 @@ export const signup: APIGatewayProxyHandler = async (event) => {
     const number = Math.floor(Math.random() * 2001);
 
     // Create unique identifiers and secure password
-    const playerId = crypto.randomUUID();
+    const id = crypto.randomUUID();
     const username = `${word}${number}`;
     const passwordHash = hashPassword(password);
     const createdAt = new Date().toISOString();
@@ -77,7 +77,7 @@ export const signup: APIGatewayProxyHandler = async (event) => {
     // Create player object for public API responses
     // Excludes sensitive fields like passwordHash
     const player: Player = {
-      playerId,
+      id,
       email,
       username,
       totalScans: 0, // Initialize with no scans completed

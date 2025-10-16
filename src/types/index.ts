@@ -1,19 +1,19 @@
 export enum Tables {
   Items = "Items",
-  ItemCatalog = "ItemCatalog",
+  Collectables = "Collectables",
   Players = "Players",
   Trades = "Trades",
 }
 
 export interface Item {
-  itemId: string;
-  catalogItemId: string;
+  id: string;
+  collectableId: string;
   playerId: string;
   foundAt: string;
 }
 
-export interface CatalogItem {
-  itemId: string;
+export interface Collectable {
+  id: string;
   name: string;
   description: string;
   rarity: string;
@@ -21,14 +21,6 @@ export interface CatalogItem {
   rarityColor: string;
   imageUrl?: string;
   createdAt: string;
-}
-
-export interface PlayerToken {
-  playerId: string;
-  email: string;
-  username: string;
-  iat: number;
-  exp?: number;
 }
 
 export enum TradeStatus {
@@ -39,7 +31,7 @@ export enum TradeStatus {
 }
 
 export interface Trade {
-  tradeId: string;
+  id: string;
   fromPlayerId: string;
   toPlayerId: string;
   offeredItemIds: string[];
@@ -52,11 +44,32 @@ export interface Trade {
 }
 
 export interface Player {
-  playerId: string;
+  id: string;
   email: string;
   username: string;
   totalScans: number;
   createdAt: string;
   token?: string;
   passwordHash?: string;
+}
+
+export interface PlayerToken {
+  playerId: string;
+  email: string;
+  username: string;
+  iat: number;
+  exp?: number;
+}
+
+export interface AwardedItem extends Collectable {
+  collectableId?: string;
+  rarityMinChance?: number;
+  rarityMaxChance?: number;
+}
+
+export interface ScanResult {
+  awardedItem?: AwardedItem;
+  playerId?: string;
+  foundAt?: string;
+  error?: any;
 }

@@ -72,10 +72,10 @@ export const login: APIGatewayProxyHandler = async (event) => {
     // Token contains player info for subsequent API calls
     return success(
       {
-        playerId: player.playerId,
+        id: player.id,
         email: player.email,
         username: player.username,
-        token: generateToken(player), // JWT for authenticated API access
+        token: generateToken(player),
       },
       200,
       "Login successful",

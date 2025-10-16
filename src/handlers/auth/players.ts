@@ -69,7 +69,7 @@ export const getPlayer: APIGatewayProxyHandler = async (event) => {
       // Private profile view - include sensitive information
       // Used for account settings, profile management, etc.
       return success({
-        playerId: player.playerId,
+        id: player.id,
         username: player.username,
         email: player.email, // Only visible to owner
         totalScans: player.totalScans || 0,
@@ -79,7 +79,7 @@ export const getPlayer: APIGatewayProxyHandler = async (event) => {
       // Public profile view - limited information only
       // Used for social features, trading, player identification, etc.
       return success({
-        playerId: player.playerId,
+        id: player.id,
         username: player.username, // Public for social features
         totalScans: player.totalScans || 0, // Public for gamification
         // email and createdAt intentionally excluded for privacy

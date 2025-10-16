@@ -31,47 +31,61 @@ import { Player, Item, Trade, TradeStatus } from "../../types";
  */
 export function generateTrades(players: Player[], items: Item[], count: number): Trade[] {
   if (players.length < 2 || items.length < 2) return [];
+
+  // Pre-filter players who have items to avoid wasted attempts
+  const playersWithItems = players.filter((player) =>
+    items.some((item) => item.playerId === player.id),
+  );
+
+  if (playersWithItems.length < 2) return [];
+
   const trades: Trade[] = [];
-  for (let i = 0; i < count; i++) {
-    let fromIdx = Math.floor(Math.random() * players.length),
+  let attempts = 0;
+  const maxAttempts = count * 3; // Prevent infinite loops
+
+  while (trades.length < count && attempts < maxAttempts) {
+    attempts++;
+
+    let fromIdx = Math.floor(Math.random() * playersWithItems.length),
       toIdx;
     do {
-      toIdx = Math.floor(Math.random() * players.length);
+      toIdx = Math.floor(Math.random() * playersWithItems.length);
     } while (toIdx === fromIdx);
 
-    const fromPlayerId = players[fromIdx].playerId,
-      toPlayerId = players[toIdx].playerId;
+    const fromPlayerId = playersWithItems[fromIdx].id,
+      toPlayerId = playersWithItems[toIdx].id;
 
-    // Get all items owned by each player (can be re-used across trades)
+    // Get items for each player
     const fromsItems = items.filter((it) => it.playerId === fromPlayerId);
     const tosItems = items.filter((it) => it.playerId === toPlayerId);
-    if (fromsItems.length === 0 || tosItems.length === 0) continue; // Skip if player has no items
 
-    // Determine bundle sizes (1-5 items per side)
-    const offeredNum = Math.max(1, Math.floor(Math.random() * 5) + 1);
-    const requestedNum = Math.max(1, Math.floor(Math.random() * 5) + 1);
+    // Since we pre-filtered, these should always have items, but double-check
+    if (fromsItems.length === 0 || tosItems.length === 0) continue;
+
+    // Determine bundle sizes (1-5 items per side, but don't exceed available items)
+    const offeredNum = Math.min(fromsItems.length, Math.max(1, Math.floor(Math.random() * 5) + 1));
+    const requestedNum = Math.min(tosItems.length, Math.max(1, Math.floor(Math.random() * 5) + 1));
+
     // Shuffle and select items for this trade
     const offeredItemIds = fromsItems
       .sort(() => Math.random() - 0.5)
       .slice(0, offeredNum)
-      .map((it) => it.itemId);
+      .map((it) => it.id);
     const requestedItemIds = tosItems
       .sort(() => Math.random() - 0.5)
       .slice(0, requestedNum)
-      .map((it) => it.itemId);
+      .map((it) => it.id);
 
     // 40% chance for trade to be completed, otherwise pending
     const isCompleted = Math.random() < 0.4;
     trades.push({
-      tradeId: crypto.randomUUID(),
+      id: crypto.randomUUID(),
       fromPlayerId,
       toPlayerId,
       offeredItemIds,
       requestedItemIds,
       status: isCompleted ? TradeStatus.COMPLETED : TradeStatus.PENDING,
-      // Simulate creation time within the last week
       createdAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
-      // Completed trades get a completion timestamp
       ...(isCompleted
         ? {
             completedAt: new Date(
@@ -81,5 +95,6 @@ export function generateTrades(players: Player[], items: Item[], count: number):
         : {}),
     });
   }
+
   return trades;
 }

@@ -44,11 +44,11 @@ async function createTables() {
     console.log("Existing tables:", existingTables);
 
     const tables = [
-      // ItemCatalog Table
+      // Collectables Table
       {
-        TableName: "ItemCatalog",
-        AttributeDefinitions: [{ AttributeName: "itemId", AttributeType: "S" }],
-        KeySchema: [{ AttributeName: "itemId", KeyType: "HASH" }],
+        TableName: "Collectables",
+        AttributeDefinitions: [{ AttributeName: "id", AttributeType: "S" }],
+        KeySchema: [{ AttributeName: "id", KeyType: "HASH" }],
         BillingMode: "PAY_PER_REQUEST",
       },
 
@@ -56,10 +56,10 @@ async function createTables() {
       {
         TableName: "Players",
         AttributeDefinitions: [
-          { AttributeName: "playerId", AttributeType: "S" },
+          { AttributeName: "id", AttributeType: "S" },
           { AttributeName: "email", AttributeType: "S" },
         ],
-        KeySchema: [{ AttributeName: "playerId", KeyType: "HASH" }],
+        KeySchema: [{ AttributeName: "id", KeyType: "HASH" }],
         GlobalSecondaryIndexes: [
           {
             IndexName: "EmailIndex",
@@ -74,10 +74,10 @@ async function createTables() {
       {
         TableName: "Items",
         AttributeDefinitions: [
-          { AttributeName: "itemId", AttributeType: "S" },
+          { AttributeName: "id", AttributeType: "S" },
           { AttributeName: "playerId", AttributeType: "S" },
         ],
-        KeySchema: [{ AttributeName: "itemId", KeyType: "HASH" }],
+        KeySchema: [{ AttributeName: "id", KeyType: "HASH" }],
         GlobalSecondaryIndexes: [
           {
             IndexName: "PlayerIndex",
@@ -92,11 +92,11 @@ async function createTables() {
       {
         TableName: "Trades",
         AttributeDefinitions: [
-          { AttributeName: "tradeId", AttributeType: "S" },
+          { AttributeName: "id", AttributeType: "S" },
           { AttributeName: "fromPlayerId", AttributeType: "S" },
           { AttributeName: "toPlayerId", AttributeType: "S" },
         ],
-        KeySchema: [{ AttributeName: "tradeId", KeyType: "HASH" }],
+        KeySchema: [{ AttributeName: "id", KeyType: "HASH" }],
         GlobalSecondaryIndexes: [
           {
             IndexName: "FromPlayerIndex",
