@@ -1,6 +1,6 @@
 import * as crypto from "crypto";
-import { CatalogItem } from "../../types";
-import { generateItemName } from "../data/words";
+import { Collectable } from "../../types";
+import { generateCollectableName } from "../data/words";
 import { generateDescription } from "../data/descriptions";
 import { rarityTiers } from "../../data/rarity";
 
@@ -46,21 +46,21 @@ function pickWeightedRarity(
  * - At least one item guaranteed for each rarity tier.
  * - All other items distributed by session rarity chance.
  *
- * @param totalItems - total count of catalog items to generate
+ * @param totalCollectables - total count of catalog items to generate
  * @param sessionTiers - session rarity array from assignSessionChances
- * @returns CatalogItem[] ready for DB seeding
+ * @returns Collectable[] ready for DB seeding
  */
-export function generateCatalogItems(
-  totalItems: number,
+export function generateCollectables(
+  totalCollectables: number,
   sessionTiers: Array<{ name: string; color: string; chance: number }>,
-): CatalogItem[] {
-  const items: CatalogItem[] = [];
+): Collectable[] {
+  const collectables: Collectable[] = [];
 
   // One guaranteed item per rarity tier
   sessionTiers.forEach((tier) => {
-    items.push({
-      itemId: crypto.randomUUID(),
-      name: generateItemName(),
+    collectables.push({
+      id: crypto.randomUUID(),
+      name: generateCollectableName(),
       description: generateDescription(tier.name),
       rarity: tier.name,
       rarityChance: tier.chance,
@@ -70,11 +70,11 @@ export function generateCatalogItems(
   });
 
   // Remaining items with weighted random rarity
-  for (let i = sessionTiers.length; i < totalItems; i++) {
+  for (let i = sessionTiers.length; i < totalCollectables; i++) {
     const tier = pickWeightedRarity(sessionTiers);
-    items.push({
-      itemId: crypto.randomUUID(),
-      name: generateItemName(),
+    collectables.push({
+      id: crypto.randomUUID(),
+      name: generateCollectableName(),
       description: generateDescription(tier.name),
       rarity: tier.name,
       rarityChance: tier.chance,
@@ -83,5 +83,5 @@ export function generateCatalogItems(
     });
   }
 
-  return items;
+  return collectables;
 }

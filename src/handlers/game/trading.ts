@@ -96,7 +96,7 @@ export const createTrade: APIGatewayProxyHandler = async (event) => {
     if (!requestedValid) return badRequest("Requested items must belong to the target player");
 
     const trade: Trade = {
-      tradeId: randomUUID(),
+      id: randomUUID(),
       fromPlayerId: currentUser.playerId,
       toPlayerId,
       offeredItemIds,

@@ -8,7 +8,7 @@ provider:
   environment:
     DYNAMODB_PLAYERS: Players
     DYNAMODB_ITEMS: Items
-    DYNAMODB_ITEMCATALOG: ItemCatalog
+    DYNAMODB_COLLECTABLES: Collectables
     DYNAMODB_TRADES: Trades
     JWT_SECRET: ${env:JWT_SECRET, 'dev-secret-change-in-production'}
     DYNAMODB_ENDPOINT: ${env:DYNAMODB_ENDPOINT, ''}
@@ -91,6 +91,15 @@ functions:
           method: get
           cors: true
 
+  # Collectables Management
+  collectables--getall:
+    handler: src/handlers/game/collectables.getAll
+    events:
+      - http:
+          path: collectables
+          method: get
+          cors: true
+
   # Trading System
   trade--get:
     handler: src/handlers/game/trading.getTrade
@@ -134,16 +143,16 @@ functions:
 
 resources:
   Resources:
-    # Item Catalog Table
-    ItemCatalogTable:
+    # Collectables Table
+    CollectablesTable:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: ItemCatalog
+        TableName: Collectables
         AttributeDefinitions:
-          - AttributeName: itemId
+          - AttributeName: id
             AttributeType: S
         KeySchema:
-          - AttributeName: itemId
+          - AttributeName: id
             KeyType: HASH
         BillingMode: PAY_PER_REQUEST
 
@@ -153,12 +162,12 @@ resources:
       Properties:
         TableName: Players
         AttributeDefinitions:
-          - AttributeName: playerId
+          - AttributeName: id
             AttributeType: S
           - AttributeName: email
             AttributeType: S
         KeySchema:
-          - AttributeName: playerId
+          - AttributeName: id
             KeyType: HASH
         GlobalSecondaryIndexes:
           - IndexName: EmailIndex
@@ -175,12 +184,12 @@ resources:
       Properties:
         TableName: Items
         AttributeDefinitions:
-          - AttributeName: itemId
+          - AttributeName: id
             AttributeType: S
           - AttributeName: playerId
             AttributeType: S
         KeySchema:
-          - AttributeName: itemId
+          - AttributeName: id
             KeyType: HASH
         GlobalSecondaryIndexes:
           - IndexName: PlayerIndex
@@ -191,20 +200,20 @@ resources:
               ProjectionType: ALL
         BillingMode: PAY_PER_REQUEST
 
-    #Trades Table
+    # Trades Table
     TradesTable:
       Type: AWS::DynamoDB::Table
       Properties:
         TableName: Trades
         AttributeDefinitions:
-          - AttributeName: tradeId
+          - AttributeName: id
             AttributeType: S
           - AttributeName: fromPlayerId
             AttributeType: S
           - AttributeName: toPlayerId
             AttributeType: S
         KeySchema:
-          - AttributeName: tradeId
+          - AttributeName: id
             KeyType: HASH
         GlobalSecondaryIndexes:
           - IndexName: FromPlayerIndex

@@ -7,7 +7,7 @@ import { hashPassword } from "../../core/auth";
  * Generate an array of test players with randomised attributes.
  *
  * Each player has:
- * - A unique UUID as their playerId
+ * - A unique UUID as their id
  * - A friendly random username (two English words joined by '-')
  * - A pseudo-random email for testing login/signup flows
  * - A random number of total scans (0–2000), for gameplay stat diversity
@@ -23,7 +23,7 @@ export function generatePlayers(count: number): Player[] {
   const players: Player[] = [];
 
   players.push({
-    playerId: crypto.randomUUID(),
+    id: crypto.randomUUID(),
     username: "test",
     email: "test@test.com",
     passwordHash: hashPassword("test"),
@@ -34,7 +34,7 @@ export function generatePlayers(count: number): Player[] {
   for (let i = 0; i < count; i++) {
     players.push({
       // Universally unique identifier for DB primary key
-      playerId: crypto.randomUUID(),
+      id: crypto.randomUUID(),
       // Username is two random English words joined for memorability
       username: generate({ exactly: 2, join: "-" }),
       // Email is two random words joined with '@', domain '.com'; prevents real emails in test

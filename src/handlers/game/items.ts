@@ -37,8 +37,8 @@ export const getItem: APIGatewayProxyHandler = async (event) => {
 
     // Return item details (all fields since this is a single item lookup)
     return success({
-      itemId: item.itemId,
-      catalogItemId: item.catalogItemId,
+      id: item.id,
+      collectableId: item.collectableId,
       playerId: item.playerId,
       foundAt: item.foundAt,
     });
@@ -106,8 +106,8 @@ export const getAll: APIGatewayProxyHandler = async (event) => {
     // Transform items for response - exclude playerId since it's redundant
     // (we already know which player we're querying for)
     const items = playerItems.map((item: Item) => ({
-      itemId: item.itemId,
-      catalogItemId: item.catalogItemId,
+      id: item.id,
+      collectableId: item.collectableId,
       foundAt: item.foundAt,
     }));
 
