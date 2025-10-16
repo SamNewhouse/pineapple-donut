@@ -177,29 +177,111 @@ serverless deploy --stage production
 - CORS enabled for APIs
 - Configurable secrets via environment variables
 
----
-
 ## 📊 Database Schema
+
+This project uses multiple DynamoDB tables for storing players, collectables, items, and trades. Below is an overview showing how each table maps to your TypeScript types and indexing strategy:
+
+---
 
 ### Players Table
 
-- Primary Key: `playerId` (String)
-- GSI: `EmailIndex` (for lookup by email)
+- **Table Name:** `Players`
+- **Primary Key:** `id` (string)
+- **Global Secondary Index:** `EmailIndex` (partition key: `email`)
+  - Used for efficient lookup of players by email address.
 
-### ItemCatalog Table
+**TypeScript Interface:**
 
-- Primary Key: `itemId` (String)
+```typescript
+export interface Player {
+  id: string;
+  email: string;
+  username: string;
+  totalScans: number;
+  createdAt: string;
+  token?: string;
+  passwordHash?: string;
+}
+```
+
+---
 
 ### Items Table
 
-- Primary Key: `itemId` (String)
-- GSI: `PlayerIndex` (for lookup by `playerId`)
+- **Table Name:** `Items`
+- **Primary Key:** `id` (string)
+- **Global Secondary Index:** `PlayerIndex` (partition key: `playerId`)
+  - Enables lookup of all items owned by a specific player.
+
+**TypeScript Interface:**
+
+```typescript
+export interface Item {
+  id: string;
+  collectableId: string;
+  playerId: string;
+  foundAt: string;
+}
+```
+
+---
+
+### Collectables Table
+
+- **Table Name:** `Collectables`
+- **Primary Key:** `id` (string)
+
+**TypeScript Interface:**
+
+```typescript
+export interface Collectable {
+  id: string;
+  name: string;
+  description: string;
+  rarity: string;
+  rarityChance: number;
+  rarityColor: string;
+  imageUrl?: string;
+  createdAt: string;
+}
+```
+
+---
 
 ### Trades Table
 
-- Primary Key: `tradeId` (String)
-- GSI: `FromPlayerIndex` (`fromPlayerId`)
-- GSI: `ToPlayerIndex` (`toPlayerId`)
+- **Table Name:** `Trades`
+- **Primary Key:** `id` (string)
+- **Global Secondary Indexes:**
+  - `FromPlayerIndex`: partition key `fromPlayerId`
+  - `ToPlayerIndex`: partition key `toPlayerId`
+  - These GSIs let you efficiently find trades initiated or received by any player.
+
+**TypeScript Interface:**
+
+```typescript
+export enum TradeStatus {
+  PENDING = "pending",
+  COMPLETED = "completed",
+  REJECTED = "rejected",
+  CANCELLED = "cancelled",
+}
+
+export interface Trade {
+  id: string;
+  fromPlayerId: string;
+  toPlayerId: string;
+  offeredItemIds: string[];
+  requestedItemIds: string[];
+  status: TradeStatus;
+  createdAt: string;
+  completedAt?: string;
+  rejectedAt?: string;
+  cancelledAt?: string;
+}
+```
+
+**All table names and key structures are consistent with the TypeScript types and the Serverless resources definitions in your project.**
 
 ---
 
