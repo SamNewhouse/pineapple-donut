@@ -10,7 +10,8 @@ coverage/
 .serverless/
 
 # Local env and credentials
-.env*
+.env
+.env.local
 .aws/
 
 # Miscellaneous system files
