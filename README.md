@@ -119,7 +119,6 @@ The assigned public URL will appear in the Cloudflared logs (`~/.cloudflared/clo
 Start or stop your local environment using the provided scripts:
 
 ```bash
-chmod +x start.sh stop.sh   # Give the executable files the right permissions
 ./start.sh                  # Starts DynamoDB (if used locally), Cloudflare tunnel, and your backend API
 ./stop.sh                   # Stops the Cloudflare tunnel and shuts down DynamoDB
 ```
