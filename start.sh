@@ -52,6 +52,6 @@ echo "🛠️ Building TypeScript project..."
 npm run build
 
 echo "🟢 Starting backend server..."
-npm run start
+npm run offline
 
 echo "🎉 All systems ready! Your API is securely published and available for development!"

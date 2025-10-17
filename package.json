@@ -4,7 +4,8 @@
   "description": "",
   "main": ".build/handler.js",
   "scripts": {
-    "start": "npm run build && npm run offline",
+    "start": "./start.sh",
+    "stop": "./stop.sh",
     "build": "tsc",
     "deploy": "serverless deploy",
     "offline": "serverless offline --stage dev",
