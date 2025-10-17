@@ -36,7 +36,7 @@ functions:
     handler: src/handlers/auth/players.get
     events:
       - http:
-          path: player/{playerId}
+          path: player/{id}
           method: get
           cors: true
 
@@ -44,7 +44,7 @@ functions:
     handler: src/handlers/game/trading.getPlayerTrades
     events:
       - http:
-          path: player/{playerId}/trades
+          path: player/{id}/trades
           method: get
           cors: true
 
@@ -52,7 +52,7 @@ functions:
     handler: src/handlers/game/items.getAll
     events:
       - http:
-          path: player/{playerId}/items
+          path: player/{id}/items
           method: get
           cors: true
 

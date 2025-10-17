@@ -91,12 +91,12 @@ src
 
 - `POST /auth/signup` — Create a new player account
 - `POST /auth/login` — Authenticate player (JWT)
-- `GET /player/{playerId}` — Fetch player profile
+- `GET /player/{id}` — Fetch player profile
 
 **Game Features:**
 
 - `POST /scan/process` — Add scanned item to player inventory
-- `GET /player/{playerId}/items` — List all items for a player
+- `GET /player/{id}/items` — List all items for a player
 - `GET /item/{itemId}` — Get details for a specific item
 
 **Trading System:**
@@ -106,7 +106,7 @@ src
 - `POST /trade/{tradeId}/accept` — Accept trade offer
 - `POST /trade/{tradeId}/reject` — Reject trade offer
 - `POST /trade/{tradeId}/cancel` — Cancel trade offer
-- `GET /player/{playerId}/trades` — Get all trades for a player
+- `GET /player/{id}/trades` — Get all trades for a player
 
 ---
 
