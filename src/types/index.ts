@@ -3,12 +3,14 @@ export enum Tables {
   Collectables = "Collectables",
   Players = "Players",
   Trades = "Trades",
+  Rarities = "Rarities",
 }
 
 export interface Item {
   id: string;
-  collectableId: string;
   playerId: string;
+  collectableId: string;
+  chance: number;
   foundAt: string;
 }
 
@@ -16,11 +18,17 @@ export interface Collectable {
   id: string;
   name: string;
   description: string;
-  rarity: string;
-  rarityChance: number;
-  rarityColor: string;
+  rarity: number;
   imageUrl?: string;
   createdAt: string;
+}
+
+export interface Rarity {
+  id: number;
+  name: string;
+  minChance: number;
+  maxChance: number;
+  color: string;
 }
 
 export enum TradeStatus {

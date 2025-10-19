@@ -35,8 +35,8 @@ cp .env.example .env
 Start or stop your local environment using the provided scripts:
 
 ```bash
-./start.sh
-./stop.sh
+npm run start
+npm run stop
 ```
 
 **What happens when you run the scripts?**
@@ -54,7 +54,8 @@ Start or stop your local environment using the provided scripts:
 
 #### Available Scripts
 
-- `npm run start` — Build and start Serverless Offline (local API)
+- `npm run start` — Runs start.sh script (see above)
+- `npm run stop` — Runs stop.sh script (see above)
 - `npm run build` — Compile TypeScript sources
 - `npm run deploy` — Deploy the project to AWS using Serverless
 - `npm run offline` — Run Serverless Offline for local development
@@ -283,3 +284,227 @@ I'm just bored
 
 - Website: www.samnewhouse.co.uk
 - GitHub: [@SamNewhouse](https://github.com/SamNewhouse)
+
+---
+
+# Pineapple Donut Backend Architecture: Optimisation Plan (2025)
+
+## Overview
+
+**Pineapple Donut** is a serverless game backend using AWS Lambda and DynamoDB, serving player authentication, item management, trading, and dynamic metadata. The new architecture introduces RDS/Aurora for transactional and relational functions, optimizing cost, scalability, and analytics.
+
+---
+
+## Current State
+
+- **All Data in DynamoDB**: Players, Items, Collectables, and Trades stored in DynamoDB tables.
+- **Session Tokens**: Managed locally by apps; no volatile session state stored in DB.
+- **Reads**: Client accesses table data frequently; player fetches on login, items/collectables loaded per session.
+
+---
+
+## Proposed Hybrid Architecture
+
+### **DynamoDB** (For Stable, Lookup-Oriented & Static Data)
+
+- **Players Table**: Stores basic profile (id, email, username, totalScans, createdAt).
+  - Rarely updated, fast key lookups.
+- **Collectables Table**: Static metadata for items (rarely changes).
+  - Loaded on player login, cached locally on client.
+- **Achievements Table**: Future addition; mostly infrequent lookups and updates.
+  - Also cached locally, notification system for changes.
+
+### **RDS/Aurora** (For Transactional, Relational, and Consistency-Critical Data)
+
+- **Players Table**: Sensitive info, profile relations, advanced analytics.
+- **Items Table**: Ownership cross-linked by player and collectable, strong consistency for trades.
+- **Trades Table**: Atomic trade execution, multi-entity updates, rollbacks.
+  - SQL joins for player/inventory/audit analytics.
+- **Inventory Audits, Reports, and Growth Projections**: Advanced BI queries.
+
+---
+
+## Table Designs (Example Schemas)
+
+### DynamoDB
+
+```typescript
+interface Players {
+  id: string;
+  email: string;
+  username: string;
+  totalScans: number;
+  createdAt: string;
+}
+
+interface Collectables {
+  id: string;
+  name: string;
+  description: string;
+  rarity: string;
+  rarityChance: number;
+  rarityColor: string;
+  imageUrl?: string;
+  createdAt: string;
+}
+
+interface Achievements {
+  id: string;
+  title: string;
+  description: string;
+  condition: string;
+  points: number;
+}
+```
+
+### RDS/Aurora (SQL Tables)
+
+```sql
+-- Items
+id UUID PRIMARY KEY,
+collectable_id UUID REFERENCES collectables(id),
+player_id UUID REFERENCES players(id),
+found_at TIMESTAMP
+
+-- Trades
+id UUID PRIMARY KEY,
+from_player_id UUID REFERENCES players(id),
+to_player_id UUID REFERENCES players(id),
+offered_item_ids JSONB,
+requested_item_ids JSONB,
+status VARCHAR(32),
+created_at TIMESTAMP,
+completed_at TIMESTAMP
+```
+
+---
+
+## Analytics Architecture
+
+**DynamoDB:**
+
+- Use DynamoDB Streams + AWS Lambda for basic count/event triggers.
+- Not designed for complex or historical reporting.
+
+**RDS/Aurora:**
+
+- SQL-ready for login frequency, trade volumes, inventory stats, rare item drops.
+- Compatible with BI tools/dashboarding.
+
+---
+
+## Load Distribution and AWS Free Tier Cost Analysis
+
+### **Usage Model (1000 Active Players)**
+
+- Player profile: 1-2 reads per day/player.
+- Collectables/Achievements: 1 read each on login, cached.
+- Items: 3-5 reads/day/player
+- Trades: ~100 per day (multi-op transactions)
+- Inventory: ~500 updates/day
+
+### **DynamoDB Free Tier**
+
+- 25 RCUs/WCUs (approx 200M requests/mo)
+- 25GB storage
+- Usage: Well below limit with caching, load optimization.
+
+### **RDS Free Tier**
+
+- 750 instance hours (db.t3.micro), 20GB storage
+- Usage: ≤ 1000 players, comfortably under limit.
+
+### **Lambda Free Tier**
+
+- 1M invocations/month, 400K GB-seconds compute
+- Usage: Estimated 160K invocations/month
+
+### **Cost Optimization**
+
+- Caching reduces reads dramatically.
+- Trades/inventory offloaded to RDS for transactionality.
+- Monitoring actual usage is crucial (AWS Cost Explorer/CloudWatch).
+
+---
+
+## Comparative Chart – DynamoDB vs RDS/Aurora
+
+| Feature         | DynamoDB                     | RDS/Aurora                        |
+| --------------- | ---------------------------- | --------------------------------- |
+| Scaling         | Auto, massive                | High, vertical/horizontal scaling |
+| Transactions    | Limited (single-table, keys) | Full ACID, multi-table            |
+| Analytics       | Limited (streams, no joins)  | Full SQL, joins, BI integration   |
+| Cost (low load) | Very low/free                | Free tier available               |
+
+---
+
+### Load Distribution Visualization
+
+Consider including a simple chart illustrating where the read/write operations go:
+
+```markdown
+**Sample Load Distribution (for 1000 daily users):**
+
+| Service    | Reads/Month | Writes/Month | Usage Pattern                  |
+| ---------- | ----------- | ------------ | ------------------------------ |
+| DynamoDB   | ~50,000     | ~10,000      | Initial login/load, cache hits |
+| RDS/Aurora | ~10,000     | ~1,500       | Trades, inventory transactions |
+| Lambda     | ~160,000    | N/A          | Backend API calls, processing  |
+
+> _Visuals can be generated using bar or pie charts to show proportion of load._
+```
+
+If you want to graphically present these, use online tools for pie/bar charts, or embed as images once exported.
+
+---
+
+### Future Scaling Considerations
+
+Add a section to show how the strategy supports future growth:
+
+- As user count grows, **DynamoDB** remains cost-effective for stable data.
+- **RDS/Aurora** can scale vertically/horizontally or upgrade instance size as transactional load increases (pay as you grow beyond free tier).
+- Lambda auto-scales, but monitor invocation spikes.
+
+---
+
+### Change Justification Table
+
+Include a matrix showing "Before" and "After" to highlight why specific migrations help:
+
+```markdown
+| Entity       | Old (DynamoDB only)      | New (Hybrid)                                    | Reason for Change              |
+| ------------ | ------------------------ | ----------------------------------------------- | ------------------------------ |
+| Players      | All profile/session data | Static in DynamoDB, sensitive/relational in RDS | Security, analytics, scaling   |
+| Collectables | DynamoDB                 | DynamoDB                                        | Rare updates, fast global read |
+| Achievements | N/A (future)             | DynamoDB                                        | Static, cached on client       |
+| Items        | DynamoDB                 | RDS/Aurora                                      | Consistency, join performance  |
+| Trades       | DynamoDB                 | RDS/Aurora                                      | ACID, multi-table transactions |
+```
+
+---
+
+### Implementation Best Practices
+
+- Use DynamoDB GSIs for flexible queries where possible.
+- Ensure all sensitive data in RDS is encrypted at rest and in transit.
+- Regularly review IAM roles and DB access permissions.
+- Leverage AWS monitoring for proactive scaling alerts.
+- Schedule regular backups for RDS and periodic exports for DynamoDB.
+
+## Recommendations
+
+- Store stable, read-heavy, rarely updated data in DynamoDB.
+- Move transactional, critical, and relational data to RDS/Aurora (especially trade logic, inventory updates).
+- Use client-side caching for collectables/achievements/data on load with push-notifications for changes.
+- Store session tokens locally only.
+- Monitor and alert for usage spikes and free tier overruns.
+- Regularly audit table design as playerbase grows.
+- Optimize Lambda code for minimal duration/memory.
+
+### References & Tools
+
+- GitHub - SamNewhouse/pineapple-donut
+- Amazon DynamoDB Pricing | NoSQL Key-Value Database
+- Amazon RDS Free Tier | Cloud Relational Database
+- Text To PDF - Convert TXT to PDF online For Free

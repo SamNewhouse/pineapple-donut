@@ -44,7 +44,7 @@ functions:
     handler: src/handlers/game/trading.getPlayerTrades
     events:
       - http:
-          path: player/{id}/trades
+          path: player/{playerId}/trades
           method: get
           cors: true
 
@@ -52,7 +52,7 @@ functions:
     handler: src/handlers/game/items.getAll
     events:
       - http:
-          path: player/{id}/items
+          path: player/{playerId}/items
           method: get
           cors: true
 
@@ -151,6 +151,19 @@ resources:
         AttributeDefinitions:
           - AttributeName: id
             AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+
+    # Rarities Table
+    RaritiesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: Rarities
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: N
         KeySchema:
           - AttributeName: id
             KeyType: HASH
