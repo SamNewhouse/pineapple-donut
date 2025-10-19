@@ -52,6 +52,14 @@ async function createTables() {
         BillingMode: "PAY_PER_REQUEST",
       },
 
+      // Rarities Table
+      {
+        TableName: "Rarities",
+        AttributeDefinitions: [{ AttributeName: "id", AttributeType: "N" }],
+        KeySchema: [{ AttributeName: "id", KeyType: "HASH" }],
+        BillingMode: "PAY_PER_REQUEST",
+      },
+
       // Players Table
       {
         TableName: "Players",

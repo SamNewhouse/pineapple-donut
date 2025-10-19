@@ -1,17 +1,14 @@
 import * as dynamo from "../core/dynamodb";
-import { Player, Tables } from "../types";
-import { assignSessionChances, generateCollectables } from "./seeder/collectables";
+import * as crypto from "crypto";
+import { Item, Player, Tables } from "../types";
+import { generateCollectables } from "./seeder/collectables";
 import { generatePlayers } from "./seeder/players";
 import { generateItems } from "./seeder/items";
 import { generateTrades } from "./seeder/trades";
-import { rarityTiers } from "../data/rarity";
+import { populateRarities, assignSessionChances } from "./seeder/rarities"; // Import from rarities.ts
 
 /**
- * Seed a DynamoDB table by inserting provided data,
- * with error-resilient logging for each item.
- *
- * @param tableName - Name of the DynamoDB table to seed
- * @param data - Array of items to insert
+ * Seed a DynamoDB table by inserting provided data, with error-resilient logging for each item.
  */
 async function seedTable(tableName: string, data: any[]): Promise<void> {
   console.log(`Seeding ${tableName} with ${data.length} items...`);
@@ -20,7 +17,6 @@ async function seedTable(tableName: string, data: any[]): Promise<void> {
     try {
       await dynamo.put(tableName, item);
       successCount++;
-      // Only log every 50 items for less spam
       if (successCount % 50 === 0) {
         console.log(`  ✅ Seeded ${successCount}/${data.length} items...`);
       }
@@ -32,54 +28,63 @@ async function seedTable(tableName: string, data: any[]): Promise<void> {
 }
 
 function formatChance(value: number): string {
-  // If it's 1 or greater, show integer only
-  if (value >= 1) {
-    return `${Math.floor(value)}%`;
-  }
-  // Otherwise, show all necessary decimals—no trailing zeroes
+  if (value >= 1) return `${Math.floor(value)}%`;
   const str = value.toFixed(8);
   return `${str.replace(/\.?0+$/, "")}%`;
 }
 
 /**
  * Orchestrates full seeding procedure, seeding all DB tables in dependency order.
- * Provides comprehensive logging, statistics, and test user details.
+ * Provides robust logging, statistics, and test user details.
  */
 async function seedAllTables(): Promise<void> {
   try {
     console.log("🌱 Starting database seeding...\n");
 
-    // Generate all test data in-memory
+    // 1. Seed rarities first (source of truth)
+    const rarities = populateRarities();
+    await seedTable(Tables.Rarities, rarities);
+
+    // 2. Generate session tiers using canonical assignSessionChances from rarities.ts
+    const sessionTiers = assignSessionChances(rarities);
     const players = generatePlayers(250);
-    const sessionTiers = assignSessionChances();
     const collectables = generateCollectables(250, sessionTiers);
-    const items = generateItems(players, collectables, 1000);
+    const items = generateItems(players, collectables, rarities, 1000);
     const trades = generateTrades(players, items, 500);
 
-    // Debug logging only if trades fail to generate
-    if (trades.length === 0) {
-      console.log("⚠️  No trades generated - debugging...");
-      const itemsByPlayer = items.reduce(
-        (acc, item) => {
-          acc[item.playerId] = (acc[item.playerId] || 0) + 1;
-          return acc;
-        },
-        {} as Record<string, number>,
-      );
+    // Attach 25 real collectables to "test@test.com" user
+    const testUser = players.find((p) => p.email === "test@test.com");
+    if (testUser) {
+      // Create a lookup map for rarity configs by id
+      const rarityMap = new Map(rarities.map((r) => [r.id, r]));
 
-      const playersWithItems = Object.keys(itemsByPlayer).length;
-      console.log(`  - Players with items: ${playersWithItems}/${players.length}`);
-      console.log(`  - Sample player items:`, Object.entries(itemsByPlayer).slice(0, 5));
-      console.log(); // Add space
+      const chosenCollectables = collectables.sort(() => Math.random() - 0.5).slice(0, 25);
+      const testUserItems: Item[] = chosenCollectables.map((collectable) => {
+        const rarityConfig = rarityMap.get(collectable.rarity);
+        let chance = 0;
+        if (rarityConfig) {
+          chance =
+            Math.random() * (rarityConfig.maxChance - rarityConfig.minChance) +
+            rarityConfig.minChance;
+        }
+        return {
+          id: crypto.randomUUID(),
+          playerId: testUser.id,
+          collectableId: collectable.id,
+          chance: parseFloat(chance.toFixed(8)),
+          foundAt: new Date().toISOString(),
+        };
+      });
+      items.push(...testUserItems);
     }
 
-    // Seed tables in dependency order
+    // 3. Seed all other tables
     await seedTable(Tables.Collectables, collectables);
     await seedTable(Tables.Players, players);
     await seedTable(Tables.Items, items);
     await seedTable(Tables.Trades, trades);
 
-    // Print test user accounts (only first 5 for readability)
+    // Print test user accounts (only first 5)
     console.log("👥 Sample test user accounts:");
     players.slice(0, 5).forEach((player: Player) => {
       const itemCount = items.filter((item) => item.playerId === player.id).length;
@@ -94,42 +99,42 @@ async function seedAllTables(): Promise<void> {
     // Final summary
     console.log("\n🎉 Database seeding complete!");
     console.log("📊 Final data counts:");
+    console.log(`  - Rarities: ${rarities.length}`);
     console.log(`  - Collectables: ${collectables.length}`);
     console.log(`  - Players: ${players.length}`);
     console.log(`  - Items: ${items.length}`);
     console.log(`  - Trades: ${trades.length}`);
 
-    // Rarity distribution (only if collectables exist)
+    // Rarity distribution
     if (collectables.length > 0) {
       const rarityCount = collectables.reduce(
         (acc, item) => {
           acc[item.rarity] = (acc[item.rarity] || 0) + 1;
           return acc;
         },
-        {} as Record<string, number>,
+        {} as Record<number, number>,
       );
 
       console.log("\n🎲 Rarity Distribution:");
       Object.entries(rarityCount)
         .sort(([rarityA], [rarityB]) => {
-          const chanceA = sessionTiers.find((tier) => tier.name === rarityA)?.chance || 0;
-          const chanceB = sessionTiers.find((tier) => tier.name === rarityB)?.chance || 0;
+          const chanceA = sessionTiers.find((tier) => tier.id === Number(rarityA))?.chance || 0;
+          const chanceB = sessionTiers.find((tier) => tier.id === Number(rarityB))?.chance || 0;
           return chanceB - chanceA;
         })
         .forEach(([rarity, count]) => {
-          const configTier = rarityTiers.find((tier) => tier.name === rarity);
+          const configTier = rarities.find((tier) => tier.id === Number(rarity));
           const minChance = configTier?.minChance ?? 0;
           const maxChance = configTier?.maxChance ?? 0;
+          const name = configTier?.name ?? rarity;
           console.log(
-            `  ${rarity.padEnd(15)}: ${count.toString().padStart(3)} items ` +
+            `${name.padEnd(15)}: ${count.toString().padStart(3)} items ` +
               `(${formatChance(minChance * 100)} - ${formatChance(maxChance * 100)})`,
           );
         });
     }
 
-    console.log("\n💡 Next steps:");
-    console.log("  - View data at: http://localhost:8001");
-    console.log("  - Start API: npm run dev");
+    console.log("\nView data at: http://localhost:8001");
   } catch (error) {
     console.error("❌ Error seeding database:", error);
     process.exit(1);

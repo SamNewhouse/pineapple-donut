@@ -36,15 +36,15 @@ import { parseAuthToken } from "../../core/auth";
 export const getPlayer: APIGatewayProxyHandler = async (event) => {
   try {
     // Extract player ID from URL path parameters
-    const playerId = event.pathParameters?.playerId;
+    const id = event.pathParameters?.id;
 
     // Validate required parameter
-    if (!playerId) {
-      return badRequest("playerId required");
+    if (!id) {
+      return badRequest("id required");
     }
 
     // Fetch player data from database
-    const player: Player | null = await Dynamodb.get(Tables.Players, { playerId });
+    const player: Player | null = await Dynamodb.get(Tables.Players, { id });
 
     // Return 404 if player doesn't exist
     if (!player) {
@@ -57,8 +57,8 @@ export const getPlayer: APIGatewayProxyHandler = async (event) => {
 
     try {
       // Attempt to parse authentication token
-      const currentPlayer: PlayerToken = parseAuthToken(event.headers.Authorization);
-      isOwnProfile = currentPlayer.playerId === playerId;
+      const playerToken: PlayerToken = parseAuthToken(event.headers.Authorization);
+      isOwnProfile = playerToken.playerId === id;
     } catch {
       // Invalid or missing auth token - treat as public access
       isOwnProfile = false;

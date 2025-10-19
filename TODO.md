@@ -6,6 +6,8 @@
 
 - [ ] Player profile fields  
        _Add new fields (bio, stats, profile info) to Player schema. Provide endpoint to allow players to update only approved profile fields._
+- [ ] Rarity Table Endpoints
+      _Add REST API endpoints for CRUD operations on the Rarity table in the backend. Ensure docs are updated and test integration in the app_
 - [ ] Achievements integration  
        _Add an `achievements` array to Player schema. Maintain Achievements catalog table. Endpoints to add/remove achievements for players. Clients can cache catalog locally._
 - [ ] Achievements CRUD API  
@@ -51,6 +53,8 @@
 
 #### 💸 Monitoring, Cost & Ops
 
+- [ ] Github Actions Workflows
+      _Set up basic CI/CD workflows in .github/workflows to automate lint, test, and deploy jobs._
 - [ ] Budget/usage metrics  
        _Monitor request volume, error rates, billing through API/metrics._
 - [ ] Centralized logging  

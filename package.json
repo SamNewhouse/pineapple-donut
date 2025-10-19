@@ -13,8 +13,9 @@
     "dynamo:down": "docker compose down",
     "dynamo:destroy": "docker compose down -v",
     "dynamo:reset": "npm run dynamo:destroy && npm run dynamo:up",
-    "table:create": "ts-node src/scripts/create-table.ts",
-    "table:seed": "ts-node src/scripts/seed.ts",
+    "tables:create": "ts-node src/scripts/create-table.ts",
+    "tables:seed": "ts-node src/scripts/seed.ts",
+    "tables:reseed": "npm run tables:create && npm run tables:seed",
     "clean": "rm -rf .build",
     "format": "prettier --write ."
   },

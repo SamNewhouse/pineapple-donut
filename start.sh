@@ -26,6 +26,9 @@ fi
 echo "🚀 Starting local DynamoDB service (may take a moment)..."
 npm run dynamo:up
 
+echo "🔪 Killing active Cloudflared tunnel(s)..."
+  pkill -f "cloudflared tunnel run"
+
 echo "🚀 Starting Cloudflare Tunnel (API exposed securely to the world)..."
 nohup cloudflared tunnel run --token-file ~/.cloudflared/tunnel-token.txt > ~/.cloudflared/cloudflared.log 2>&1 &
 
