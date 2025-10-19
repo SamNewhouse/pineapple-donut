@@ -14,19 +14,15 @@ function rollQuality(): number {
 function rollCollectable(collectables: Collectable[], rarities: Rarity[]): Collectable {
   if (collectables.length === 0) throw new Error("No collectables provided");
 
-  // Assign weights to collectables based on their rarity's minChance/maxChance (rarer = lower weight)
   const weights = collectables.map((collectable) => {
     const rarity = rarities.find((r) => r.id === collectable.rarity);
-    // Use minChance (or avg of min/max) as a proxy for difficulty—lower minChance = harder
     const difficultyScore = rarity ? (rarity.minChance + rarity.maxChance) / 2 : 1;
     return difficultyScore;
   });
 
-  // Normalize weights
   const totalWeight = weights.reduce((a, b) => a + b, 0);
   const normalized = weights.map((w) => w / totalWeight);
 
-  // Pick collectable by weighted random
   let r = Math.random();
   for (let i = 0; i < collectables.length; i++) {
     r -= normalized[i];
@@ -34,7 +30,7 @@ function rollCollectable(collectables: Collectable[], rarities: Rarity[]): Colle
       return collectables[i];
     }
   }
-  return collectables[collectables.length - 1]; // fallback, should never reach
+  return collectables[collectables.length - 1];
 }
 
 /**
@@ -80,7 +76,6 @@ export function generateItems(
   for (let i = 0; i < count; i++) {
     const player = players[Math.floor(Math.random() * players.length)];
     const foundAt = new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString();
-    // Pass arrays, not individual collectable/rarity!
     items.push(generateItem(player, collectables, rarities, foundAt));
   }
   return items;
