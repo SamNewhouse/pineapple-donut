@@ -12,28 +12,18 @@ import { Rarity } from "../types";
  * This enables dynamic balancing for game sessions.
  */
 export const rarityTiers: Rarity[] = [
-  { id: 0, name: "Common", color: "#9CA3AF", minChance: 0.18, maxChance: 0.25 },
-  { id: 1, name: "Uncommon", color: "#10B981", minChance: 0.14, maxChance: 0.2 },
-  { id: 2, name: "Rare", color: "#3B82F6", minChance: 0.09, maxChance: 0.15 },
-  { id: 3, name: "Epic", color: "#8B5CF6", minChance: 0.06, maxChance: 0.12 },
-  { id: 4, name: "Legendary", color: "#F59E0B", minChance: 0.04, maxChance: 0.09 },
-  { id: 5, name: "Fabled", color: "#B91C1C", minChance: 0.03, maxChance: 0.07 },
-  { id: 6, name: "Mythic", color: "#EF4444", minChance: 0.02, maxChance: 0.06 },
-  { id: 7, name: "Divine", color: "#EC4899", minChance: 0.015, maxChance: 0.05 },
-  { id: 8, name: "Astral", color: "#818CF8", minChance: 0.01, maxChance: 0.04 },
-  { id: 9, name: "Celestial", color: "#14B8A6", minChance: 0.008, maxChance: 0.035 },
-  { id: 10, name: "Transcendent", color: "#F97316", minChance: 0.007, maxChance: 0.03 },
-  { id: 11, name: "Empyrean", color: "#F7AB1B", minChance: 0.005, maxChance: 0.025 },
-  { id: 12, name: "Ethereal", color: "#6366F1", minChance: 0.004, maxChance: 0.02 },
-  { id: 13, name: "Primordial", color: "#84CC16", minChance: 0.0025, maxChance: 0.015 },
-  { id: 14, name: "Void", color: "#1F2937", minChance: 0.0018, maxChance: 0.012 },
-  { id: 15, name: "Arcane", color: "#DB2777", minChance: 0.0014, maxChance: 0.01 },
-  { id: 16, name: "Cosmic", color: "#7C3AED", minChance: 0.001, maxChance: 0.008 },
-  { id: 17, name: "Omnipotent", color: "#DC2626", minChance: 0.0005, maxChance: 0.005 },
-  { id: 18, name: "Infinite", color: "#059669", minChance: 0.0003, maxChance: 0.003 },
-  { id: 19, name: "Quantum", color: "#7C2D12", minChance: 0.0001, maxChance: 0.001 },
-  { id: 20, name: "Singularity", color: "#BE123C", minChance: 0.000025, maxChance: 0.0002 },
-  { id: 21, name: "Universal", color: "#7E22CE", minChance: 0.000006, maxChance: 0.00008 },
-  { id: 22, name: "Omniversal", color: "#000000", minChance: 0.000001, maxChance: 0.00001 },
-  { id: 23, name: "Apocryphal", color: "#525252", minChance: 0.0000001, maxChance: 0.000001 },
+  { id: 0, name: "Common", color: "#9CA3AF", minChance: 0.22, maxChance: 0.28 }, // 1 in 4.5–3.6
+  { id: 1, name: "Uncommon", color: "#10B981", minChance: 0.18, maxChance: 0.23 }, // 1 in 5.6–4.3
+  { id: 2, name: "Rare", color: "#3B82F6", minChance: 0.13, maxChance: 0.17 }, // 1 in 7.7–5.9
+  { id: 3, name: "Epic", color: "#8B5CF6", minChance: 0.09, maxChance: 0.13 }, // 1 in 11.1–7.7
+  { id: 4, name: "Legendary", color: "#F59E0B", minChance: 0.06, maxChance: 0.09 }, // 1 in 16.7–11.1
+  { id: 5, name: "Fabled", color: "#B91C1C", minChance: 0.03, maxChance: 0.06 }, // 1 in 33.3–16.7
+  { id: 6, name: "Mythic", color: "#EF4444", minChance: 0.013, maxChance: 0.03 }, // 1 in 76.9–33.3
+  { id: 7, name: "Divine", color: "#EC4899", minChance: 0.006, maxChance: 0.013 }, // 1 in 166.7–76.9
+  { id: 8, name: "Astral", color: "#818CF8", minChance: 0.001, maxChance: 0.003 }, // 1 in 1000–333.3
+  { id: 9, name: "Celestial", color: "#14B8A6", minChance: 0.0006, maxChance: 0.0015 }, // 1 in 1667–667
+  { id: 10, name: "Transcendent", color: "#F97316", minChance: 0.0003, maxChance: 0.00065 }, // 1 in 3333–1538
+  { id: 11, name: "Ethereal", color: "#6366F1", minChance: 0.00014, maxChance: 0.00032 }, // 1 in 7142–3125
+  { id: 12, name: "Primordial", color: "#84CC16", minChance: 0.00006, maxChance: 0.00015 }, // 1 in 16667–6667
+  { id: 13, name: "Arcane", color: "#DB2777", minChance: 0.000025, maxChance: 0.000065 }, // 1 in 40,000–15,385
 ];

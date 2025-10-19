@@ -48,19 +48,18 @@ async function seedAllTables(): Promise<void> {
 
     const sessionTiers = assignSessionChances(rarities);
     const players = generatePlayers(250);
-    const collectables = generateCollectables(250, sessionTiers);
-    const items = generateItems(players, collectables, rarities, 1000);
+    const collectables = generateCollectables(500, sessionTiers);
+    const items = generateItems(players, collectables, rarities, 50000);
+    const trades = generateTrades(players, items, 150);
 
     const testUser = players.find((p) => p.email === "test@test.com");
     if (testUser) {
       const testUserItems: Item[] = [];
-      for (let i = 0; i < 25; i++) {
+      for (let i = 0; i < 250; i++) {
         testUserItems.push(generateItems([testUser], collectables, rarities, 1)[0]);
       }
       items.push(...testUserItems);
     }
-
-    const trades = generateTrades(players, items, 500);
 
     await seedTable(Tables.Collectables, collectables);
     await seedTable(Tables.Players, players);
@@ -86,6 +85,7 @@ async function seedAllTables(): Promise<void> {
     console.log(`  - Items: ${items.length}`);
     console.log(`  - Trades: ${trades.length}`);
 
+    // Collectables Distribution by Rarity
     if (collectables.length > 0) {
       const rarityCount = collectables.reduce(
         (acc, item) => {
@@ -95,8 +95,40 @@ async function seedAllTables(): Promise<void> {
         {} as Record<number, number>,
       );
 
-      console.log("\n🎲 Rarity Distribution:");
+      console.log("\n🎲 Collectables Distribution:");
       Object.entries(rarityCount)
+        .sort(([rarityA], [rarityB]) => {
+          const chanceA = sessionTiers.find((tier) => tier.id === Number(rarityA))?.chance || 0;
+          const chanceB = sessionTiers.find((tier) => tier.id === Number(rarityB))?.chance || 0;
+          return chanceB - chanceA;
+        })
+        .forEach(([rarity, count]) => {
+          const configTier = rarities.find((tier) => tier.id === Number(rarity));
+          const minChance = configTier?.minChance ?? 0;
+          const maxChance = configTier?.maxChance ?? 0;
+          const name = configTier?.name ?? rarity;
+          console.log(
+            `${name.padEnd(15)}: ${count.toString().padStart(3)} collectables ` +
+              `(${formatChance(minChance * 100)} - ${formatChance(maxChance * 100)})`,
+          );
+        });
+    }
+
+    // Items Distribution by Rarity
+    if (items.length > 0) {
+      // Get rarity for each item by looking up its collectable's rarity
+      const itemRarityCount = items.reduce(
+        (acc, item) => {
+          const collectable = collectables.find((c) => c.id === item.collectableId);
+          const rarityId = collectable?.rarity ?? -1;
+          acc[rarityId] = (acc[rarityId] || 0) + 1;
+          return acc;
+        },
+        {} as Record<number, number>,
+      );
+
+      console.log("\n🏆 Items Distribution:");
+      Object.entries(itemRarityCount)
         .sort(([rarityA], [rarityB]) => {
           const chanceA = sessionTiers.find((tier) => tier.id === Number(rarityA))?.chance || 0;
           const chanceB = sessionTiers.find((tier) => tier.id === Number(rarityB))?.chance || 0;
