@@ -1,5 +1,3 @@
-// utils/itemGeneration.ts
-
 import * as crypto from "crypto";
 import { Collectable, Item, Player, Rarity } from "../types";
 
