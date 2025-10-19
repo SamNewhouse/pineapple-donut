@@ -10,6 +10,7 @@ export interface Item {
   id: string;
   playerId: string;
   collectableId: string;
+  quality: number;
   chance: number;
   foundAt: string;
 }

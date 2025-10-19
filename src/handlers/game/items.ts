@@ -19,28 +19,25 @@ import { parseAuthToken } from "../../core/auth";
  */
 export const getItem: APIGatewayProxyHandler = async (event) => {
   try {
-    // Extract item ID from URL path parameters
     const itemId = event.pathParameters?.itemId;
 
-    // Validate required parameter
     if (!itemId) {
       return badRequest("itemId required");
     }
 
-    // Fetch item from database
-    const item: Item | null = await Dynamodb.get(Tables.Items, { itemId });
+    const item: Item | null = await Dynamodb.get(Tables.Items, { id: itemId });
 
-    // Return 404 if item doesn't exist
     if (!item) {
       return notFound("Item not found");
     }
 
-    // Return item details (all fields since this is a single item lookup)
     return success({
       id: item.id,
       collectableId: item.collectableId,
       playerId: item.playerId,
       foundAt: item.foundAt,
+      quality: item.quality,
+      chance: item.chance,
     });
   } catch (error) {
     return handleError(error);
@@ -66,27 +63,20 @@ export const getItem: APIGatewayProxyHandler = async (event) => {
  */
 export const getAll: APIGatewayProxyHandler = async (event) => {
   try {
-    // Extract player ID from URL path parameters
     const playerId = event.pathParameters?.playerId;
 
-    // Validate required parameter
     if (!playerId) {
       return badRequest("playerId required");
     }
 
-    // Determine if the requester is viewing their own inventory
-    // This affects UI presentation and available actions
     let isOwnInventory = false;
     try {
       const currentUser = parseAuthToken(event.headers.Authorization);
       isOwnInventory = currentUser.playerId === playerId;
     } catch {
-      // Invalid or missing auth token - treat as public viewing
       isOwnInventory = false;
     }
 
-    // Query all items belonging to the specified player
-    // Uses PlayerIndex GSI for efficient querying by playerId
     const playerItems: Item[] = await Dynamodb.query(
       Tables.Items,
       "playerId = :playerId",
@@ -94,28 +84,27 @@ export const getAll: APIGatewayProxyHandler = async (event) => {
       "PlayerIndex",
     );
 
-    // Handle empty inventory case
     if (playerItems.length === 0) {
       return success({
         items: [],
         totalItems: 0,
         message: "No items found for this player",
+        isOwnInventory,
       });
     }
 
-    // Transform items for response - exclude playerId since it's redundant
-    // (we already know which player we're querying for)
     const items = playerItems.map((item: Item) => ({
       id: item.id,
       collectableId: item.collectableId,
       foundAt: item.foundAt,
+      quality: item.quality,
+      chance: item.chance,
     }));
 
-    // Return inventory with metadata for client-side processing
     return success({
       items,
       totalItems: items.length,
-      isOwnInventory, // Helps client show/hide trade buttons, edit options, etc.
+      isOwnInventory,
     });
   } catch (error) {
     return handleError(error);

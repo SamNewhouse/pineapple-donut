@@ -91,6 +91,15 @@ functions:
           method: get
           cors: true
 
+  # Rarities Management
+  rarities--getall:
+    handler: src/handlers/game/rarities.getAll
+    events:
+      - http:
+          path: rarities
+          method: get
+          cors: true
+
   # Collectables Management
   collectables--getall:
     handler: src/handlers/game/collectables.getAll
