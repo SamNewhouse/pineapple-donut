@@ -1,7 +1,8 @@
 import { APIGatewayProxyHandler } from "aws-lambda";
-import { success, handleError } from "../../core/http";
-import * as Dynamodb from "../../core/dynamodb";
+import { success, handleError } from "../../lib/http";
+import * as Dynamodb from "../../lib/dynamodb";
 import { Tables, Rarity } from "../../types";
+import { getAllRarities } from "../../functions/rarities";
 
 /**
  * Get all rarity tiers from the Rarities table
@@ -13,13 +14,13 @@ import { Tables, Rarity } from "../../types";
  * Security: No authentication required - rarities config is public
  * Use case: LocalStorage for app, rarity browser, item info, probability guides
  */
-export const getAll: APIGatewayProxyHandler = async (_event) => {
+export const handler: APIGatewayProxyHandler = async (_event) => {
   try {
-    const rarities: Rarity[] = await Dynamodb.scan(Tables.Rarities);
+    const rarities: Rarity[] = await getAllRarities();
 
     return success({
-      items: rarities,
-      totalItems: rarities.length,
+      rarities,
+      total: rarities.length,
     });
   } catch (error) {
     return handleError(error);

@@ -1,8 +1,8 @@
-import * as dynamo from "../core/dynamodb";
+import * as dynamo from "../lib/dynamodb";
 import { Item, Player, Tables } from "../types";
 import { generateCollectables } from "./seeder/collectables";
 import { generatePlayers } from "./seeder/players";
-import { generateItems } from "../utils/itemGeneration";
+import { generateItems } from "../functions/items";
 import { generateTrades } from "./seeder/trades";
 import { populateRarities, assignSessionChances } from "./seeder/rarities";
 

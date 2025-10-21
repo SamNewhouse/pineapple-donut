@@ -1,13 +1,5 @@
+import { APIGatewayProxyResult } from "aws-lambda";
 import axios, { AxiosResponse, AxiosError } from "axios";
-
-/**
- * Standard HTTP response structure for API Gateway Lambda functions
- */
-export interface HttpResponse {
-  statusCode: number;
-  headers?: Record<string, string>;
-  body: string;
-}
 
 /**
  * Standardized API response body structure
@@ -44,9 +36,9 @@ const httpClient = axios.create({
  * @param data - The response data payload
  * @param statusCode - HTTP status code (defaults to 200)
  * @param message - Optional success message
- * @returns Formatted HTTP response
+ * @returns Formatted HTTP response as APIGatewayProxyResult
  */
-export function success<T>(data: T, statusCode = 200, message?: string): HttpResponse {
+export function success<T>(data: T, statusCode = 200, message?: string): APIGatewayProxyResult {
   const response: ApiResponse<T> = {
     success: true,
     data,
@@ -64,9 +56,9 @@ export function success<T>(data: T, statusCode = 200, message?: string): HttpRes
  * Creates an error HTTP response
  * @param errorMessage - Error message to return
  * @param statusCode - HTTP status code (defaults to 500)
- * @returns Formatted HTTP error response
+ * @returns Formatted HTTP error response as APIGatewayProxyResult
  */
-export function error(errorMessage: string, statusCode = 500): HttpResponse {
+export function error(errorMessage: string, statusCode = 500): APIGatewayProxyResult {
   const response: ApiResponse = {
     success: false,
     error: errorMessage,
@@ -82,45 +74,45 @@ export function error(errorMessage: string, statusCode = 500): HttpResponse {
 /**
  * Creates a 400 Bad Request response
  * @param errorMessage - Error message describing what was invalid
- * @returns HTTP 400 response
+ * @returns HTTP 400 response as APIGatewayProxyResult
  */
-export function badRequest(errorMessage: string): HttpResponse {
+export function badRequest(errorMessage: string): APIGatewayProxyResult {
   return error(errorMessage, 400);
 }
 
 /**
  * Creates a 401 Unauthorized response
  * @param errorMessage - Error message (defaults to "Unauthorized")
- * @returns HTTP 401 response
+ * @returns HTTP 401 response as APIGatewayProxyResult
  */
-export function unauthorized(errorMessage: string = "Unauthorized"): HttpResponse {
+export function unauthorized(errorMessage: string = "Unauthorized"): APIGatewayProxyResult {
   return error(errorMessage, 401);
 }
 
 /**
  * Creates a 403 Forbidden response
  * @param errorMessage - Error message (defaults to "Forbidden")
- * @returns HTTP 403 response
+ * @returns HTTP 403 response as APIGatewayProxyResult
  */
-export function forbidden(errorMessage: string = "Forbidden"): HttpResponse {
+export function forbidden(errorMessage: string = "Forbidden"): APIGatewayProxyResult {
   return error(errorMessage, 403);
 }
 
 /**
  * Creates a 404 Not Found response
  * @param errorMessage - Error message (defaults to "Not Found")
- * @returns HTTP 404 response
+ * @returns HTTP 404 response as APIGatewayProxyResult
  */
-export function notFound(errorMessage: string = "Not Found"): HttpResponse {
+export function notFound(errorMessage: string = "Not Found"): APIGatewayProxyResult {
   return error(errorMessage, 404);
 }
 
 /**
  * Creates a 409 Conflict response
  * @param errorMessage - Error message describing the conflict
- * @returns HTTP 409 response
+ * @returns HTTP 409 response as APIGatewayProxyResult
  */
-export function conflict(errorMessage: string): HttpResponse {
+export function conflict(errorMessage: string): APIGatewayProxyResult {
   return error(errorMessage, 409);
 }
 
@@ -232,7 +224,6 @@ function handleAxiosError(err: unknown): Error {
       return new Error(`Request error: ${axiosError.message}`);
     }
   }
-
   return new Error("Unknown HTTP error");
 }
 
@@ -240,9 +231,9 @@ function handleAxiosError(err: unknown): Error {
  * Converts caught errors into standardized HTTP error responses
  * Automatically maps common error types to appropriate status codes
  * @param err - The caught error (unknown type for safety)
- * @returns Formatted HTTP error response
+ * @returns Formatted HTTP error response as APIGatewayProxyResult
  */
-export function handleError(err: unknown): HttpResponse {
+export function handleError(err: unknown): APIGatewayProxyResult {
   let errorMessage = "Unknown error";
   let statusCode = 500;
 
