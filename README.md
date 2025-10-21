@@ -72,17 +72,17 @@ npm run stop
 
 ---
 
-## 📂 Project Structure
+## 📂 Project Structure -WIP
 
 ```
 src
 ├── config/         # Environment variables and app settings
-├── core/           # Core utilities: auth, database, HTTP helpers
-├── data/           # Static data definitions (rarity tiers, etc.)
 ├── functions/      # Reusable logic modules (players, items, trades, collectables, auth)
 ├── handlers/       # Lambda API endpoints (each export handler for a route)
+├── lib/            # Database and HTTP helpers
 ├── scripts/        # DB creation, seeding, and utility scripts
-└── types/          # Shared TypeScript interfaces and enums
+├── types/          # Shared TypeScript interfaces and enums
+└── utils/          # Shared helper functions
 ```
 
 ---
