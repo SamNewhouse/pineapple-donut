@@ -15,6 +15,7 @@ provider:
     STAGE: ${self:provider.stage}
 
 package:
+  individually: true
   patterns:
     - "!src/scripts/**"
 
@@ -33,117 +34,125 @@ custom:
 functions:
   # Player Management
   player--get:
-    handler: src/handlers/auth/players.get
+    handler: src/handlers/players/get.handler
     events:
       - http:
           path: player/{id}
           method: get
           cors: true
 
-  player--trades:
-    handler: src/handlers/game/trading.getPlayerTrades
+  player--update:
+    handler: src/handlers/players/update.handler
     events:
       - http:
-          path: player/{playerId}/trades
-          method: get
-          cors: true
-
-  player--items:
-    handler: src/handlers/game/items.getAll
-    events:
-      - http:
-          path: player/{playerId}/items
-          method: get
+          path: player/{id}/update/{field}
+          method: post
           cors: true
 
   # Authentication
-  auth--signup:
-    handler: src/handlers/auth/signup.signup
+  signup--process:
+    handler: src/handlers/signup/process.handler
     events:
       - http:
           path: auth/signup
           method: post
           cors: true
 
-  auth--login:
-    handler: src/handlers/auth/login.login
+  login--process:
+    handler: src/handlers/login/process.handler
     events:
       - http:
           path: auth/login
           method: post
           cors: true
 
-  # Game Functions
+  # Scan
   scan--process:
-    handler: src/handlers/game/scan.processScan
+    handler: src/handlers/scan/process.handler
     events:
       - http:
           path: scan/process
           method: post
           cors: true
 
-  # Item Management
-  item--get:
-    handler: src/handlers/game/items.getItem
+  # Items
+  items--get:
+    handler: src/handlers/items/get.handler
     events:
       - http:
           path: item/{itemId}
           method: get
           cors: true
 
-  # Rarities Management
+  items--getall:
+    handler: src/handlers/items/getAll.handler
+    events:
+      - http:
+          path: player/{playerId}/items
+          method: get
+          cors: true
+
+  # Rarities
   rarities--getall:
-    handler: src/handlers/game/rarities.getAll
+    handler: src/handlers/rarities/get.handler
     events:
       - http:
           path: rarities
           method: get
           cors: true
 
-  # Collectables Management
+  # Collectables
   collectables--getall:
-    handler: src/handlers/game/collectables.getAll
+    handler: src/handlers/collectables/getAll.handler
     events:
       - http:
           path: collectables
           method: get
           cors: true
 
-  # Trading System
-  trade--get:
-    handler: src/handlers/game/trading.getTrade
+  # Trades
+  trades--get:
+    handler: src/handlers/trades/get.handler
     events:
       - http:
           path: trade/{tradeId}
           method: get
           cors: true
 
-  trade--create:
-    handler: src/handlers/game/trading.createTrade
+  trades--getall:
+    handler: src/handlers/trades/getAll.handler
+    events:
+      - http:
+          path: player/{playerId}/trades
+          method: get
+          cors: true
+
+  trades--create:
+    handler: src/handlers/trades/create.handler
     events:
       - http:
           path: trade/create
           method: post
           cors: true
 
-  trade--accept:
-    handler: src/handlers/game/trading.acceptTrade
+  trades--accept:
+    handler: src/handlers/trades/accept.handler
     events:
       - http:
           path: trade/{tradeId}/accept
           method: post
           cors: true
 
-  trade--reject:
-    handler: src/handlers/game/trading.rejectTrade
+  trades--reject:
+    handler: src/handlers/trades/reject.handler
     events:
       - http:
           path: trade/{tradeId}/reject
           method: post
           cors: true
 
-  trade--cancel:
-    handler: src/handlers/game/trading.cancelTrade
+  trades--cancel:
+    handler: src/handlers/trades/cancel.handler
     events:
       - http:
           path: trade/{tradeId}/cancel

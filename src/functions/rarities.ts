@@ -1,4 +1,5 @@
-import { Rarity } from "../types";
+import { Rarity, Tables } from "../types";
+import * as Dynamodb from "../lib/dynamodb";
 
 /**
  * Rarity tier configuration for item catalog generation.
@@ -27,3 +28,12 @@ export const rarityTiers: Rarity[] = [
   { id: 12, name: "Primordial", color: "#84CC16", minChance: 0.00006, maxChance: 0.00015 }, // 1 in 16667–6667
   { id: 13, name: "Arcane", color: "#DB2777", minChance: 0.000025, maxChance: 0.000065 }, // 1 in 40,000–15,385
 ];
+
+/**
+ * Get all Rarities from the DB.
+ *
+ * @returns Array of Rarities items
+ */
+export async function getAllRarities(): Promise<Rarity[]> {
+  return Dynamodb.scan(Tables.Rarities);
+}

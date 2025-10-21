@@ -47,9 +47,7 @@ export interface Trade {
   requestedItemIds: string[];
   status: TradeStatus;
   createdAt: string;
-  completedAt?: string;
-  rejectedAt?: string;
-  cancelledAt?: string;
+  resolvedAt?: string;
 }
 
 export interface Player {
@@ -58,27 +56,12 @@ export interface Player {
   username: string;
   totalScans: number;
   createdAt: string;
-  token?: string;
-  passwordHash?: string;
+  passwordHash: string;
 }
 
 export interface PlayerToken {
   playerId: string;
   email: string;
-  username: string;
   iat: number;
-  exp?: number;
-}
-
-export interface AwardedItem extends Collectable {
-  collectableId?: string;
-  rarityMinChance?: number;
-  rarityMaxChance?: number;
-}
-
-export interface ScanResult {
-  awardedItem?: AwardedItem;
-  playerId?: string;
-  foundAt?: string;
-  error?: any;
+  exp: number;
 }

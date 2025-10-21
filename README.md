@@ -76,38 +76,54 @@ npm run stop
 
 ```
 src
-├── config      # Configuration files for environment variables and app settings
-├── core        # Core utilities: authentication, database, and HTTP helpers
-├── data        # Static data definitions (e.g., rarity tiers)
-├── handlers    # Lambda function endpoints (API logic for auth, game, trading)
-├── scripts     # Database creation, seeding, and utility scripts
-└── types       # Shared TypeScript type and interface definitions
+├── config/         # Environment variables and app settings
+├── core/           # Core utilities: auth, database, HTTP helpers
+├── data/           # Static data definitions (rarity tiers, etc.)
+├── functions/      # Reusable logic modules (players, items, trades, collectables, auth)
+├── handlers/       # Lambda API endpoints (each export handler for a route)
+├── scripts/        # DB creation, seeding, and utility scripts
+└── types/          # Shared TypeScript interfaces and enums
 ```
 
 ---
 
-## 📊 API Endpoints
+## 📊 API Endpoints by Type -- Swagger TODO
 
-**Authentication:**
+#### **Authentication (`PlayerToken`)**
 
-- `POST /auth/signup` — Create a new player account
-- `POST /auth/login` — Authenticate player (JWT)
+- `POST /auth/signup` — Register a new player account (returns JWT `PlayerToken`)
+- `POST /auth/login` — Authenticate player and receive JWT `PlayerToken`
+
+#### **Player (`Player`)**
+
 - `GET /player/{id}` — Fetch player profile
+- `POST /player/{id}/update/{field}` — Update a single editable field (authenticated only)
+- `GET /player/{id}/items` — List all items owned by a player
+- `GET /player/{id}/trades` — List all trades for a player
 
-**Game Features:**
+#### **Items (`Item`)**
 
-- `POST /scan/process` — Add scanned item to player inventory
-- `GET /player/{id}/items` — List all items for a player
 - `GET /item/{itemId}` — Get details for a specific item
 
-**Trading System:**
+#### **Collectables (`Collectable`)**
+
+- `GET /collectables` — List all collectable item definitions
+
+#### **Rarities (`Rarity`)**
+
+- `GET /rarities` — Get all rarity tiers and metadata
+
+#### **Scan**
+
+- `POST /scan/process` — Add newly scanned item to player inventory
+
+#### **Trades (`Trade`)**
 
 - `POST /trade/create` — Create a trade offer
 - `GET /trade/{tradeId}` — Get trade details
-- `POST /trade/{tradeId}/accept` — Accept trade offer
-- `POST /trade/{tradeId}/reject` — Reject trade offer
-- `POST /trade/{tradeId}/cancel` — Cancel trade offer
-- `GET /player/{id}/trades` — Get all trades for a player
+- `POST /trade/{tradeId}/accept` — Accept a trade offer
+- `POST /trade/{tradeId}/reject` — Reject a trade offer
+- `POST /trade/{tradeId}/cancel` — Cancel a trade offer
 
 ---
 
@@ -131,8 +147,15 @@ export interface Player {
   username: string;
   totalScans: number;
   createdAt: string;
-  token?: string;
-  passwordHash?: string;
+  passwordHash: string;
+}
+
+// Used when generating a PlayerToken
+export interface PlayerToken {
+  playerId: string;
+  email: string;
+  iat: number;
+  exp: number;
 }
 ```
 
@@ -148,9 +171,28 @@ export interface Player {
 ```typescript
 export interface Item {
   id: string;
-  collectableId: string;
   playerId: string;
+  collectableId: string;
+  quality: number;
+  chance: number;
   foundAt: string;
+}
+```
+
+### Rarity Table
+
+- **Table Name:** `Rarities`
+- **Primary Key:** `id` (number)
+
+**TypeScript Interface:**
+
+```typescript
+export interface Rarity {
+  id: number;
+  name: string;
+  minChance: number;
+  maxChance: number;
+  color: string;
 }
 ```
 
@@ -166,9 +208,7 @@ export interface Collectable {
   id: string;
   name: string;
   description: string;
-  rarity: string;
-  rarityChance: number;
-  rarityColor: string;
+  rarity: number;
   imageUrl?: string;
   createdAt: string;
 }
@@ -201,9 +241,7 @@ export interface Trade {
   requestedItemIds: string[];
   status: TradeStatus;
   createdAt: string;
-  completedAt?: string;
-  rejectedAt?: string;
-  cancelledAt?: string;
+  resolvedAt?: string;
 }
 ```
 
@@ -270,9 +308,7 @@ serverless deploy --stage production
 
 ## 🧪 Testing
 
-- Serverless Offline for API endpoint testing
-- Docker Compose for local DynamoDB testing
-- Postman/curl recommended for manual endpoint verification
+- Coming soon.
 
 ---
 
@@ -287,224 +323,8 @@ I'm just bored
 
 ---
 
-# Pineapple Donut Backend Architecture: Optimisation Plan (2025)
+## 🏗 Architecture \& Optimisation Plan
 
-## Overview
-
-**Pineapple Donut** is a serverless game backend using AWS Lambda and DynamoDB, serving player authentication, item management, trading, and dynamic metadata. The new architecture introduces RDS/Aurora for transactional and relational functions, optimizing cost, scalability, and analytics.
-
----
-
-## Current State
-
-- **All Data in DynamoDB**: Players, Items, Collectables, and Trades stored in DynamoDB tables.
-- **Session Tokens**: Managed locally by apps; no volatile session state stored in DB.
-- **Reads**: Client accesses table data frequently; player fetches on login, items/collectables loaded per session.
-
----
-
-## Proposed Hybrid Architecture
-
-### **DynamoDB** (For Stable, Lookup-Oriented & Static Data)
-
-- **Players Table**: Stores basic profile (id, email, username, totalScans, createdAt).
-  - Rarely updated, fast key lookups.
-- **Collectables Table**: Static metadata for items (rarely changes).
-  - Loaded on player login, cached locally on client.
-- **Achievements Table**: Future addition; mostly infrequent lookups and updates.
-  - Also cached locally, notification system for changes.
-
-### **RDS/Aurora** (For Transactional, Relational, and Consistency-Critical Data)
-
-- **Players Table**: Sensitive info, profile relations, advanced analytics.
-- **Items Table**: Ownership cross-linked by player and collectable, strong consistency for trades.
-- **Trades Table**: Atomic trade execution, multi-entity updates, rollbacks.
-  - SQL joins for player/inventory/audit analytics.
-- **Inventory Audits, Reports, and Growth Projections**: Advanced BI queries.
-
----
-
-## Table Designs (Example Schemas)
-
-### DynamoDB
-
-```typescript
-interface Players {
-  id: string;
-  email: string;
-  username: string;
-  totalScans: number;
-  createdAt: string;
-}
-
-interface Collectables {
-  id: string;
-  name: string;
-  description: string;
-  rarity: string;
-  rarityChance: number;
-  rarityColor: string;
-  imageUrl?: string;
-  createdAt: string;
-}
-
-interface Achievements {
-  id: string;
-  title: string;
-  description: string;
-  condition: string;
-  points: number;
-}
-```
-
-### RDS/Aurora (SQL Tables)
-
-```sql
--- Items
-id UUID PRIMARY KEY,
-collectable_id UUID REFERENCES collectables(id),
-player_id UUID REFERENCES players(id),
-found_at TIMESTAMP
-
--- Trades
-id UUID PRIMARY KEY,
-from_player_id UUID REFERENCES players(id),
-to_player_id UUID REFERENCES players(id),
-offered_item_ids JSONB,
-requested_item_ids JSONB,
-status VARCHAR(32),
-created_at TIMESTAMP,
-completed_at TIMESTAMP
-```
-
----
-
-## Analytics Architecture
-
-**DynamoDB:**
-
-- Use DynamoDB Streams + AWS Lambda for basic count/event triggers.
-- Not designed for complex or historical reporting.
-
-**RDS/Aurora:**
-
-- SQL-ready for login frequency, trade volumes, inventory stats, rare item drops.
-- Compatible with BI tools/dashboarding.
-
----
-
-## Load Distribution and AWS Free Tier Cost Analysis
-
-### **Usage Model (1000 Active Players)**
-
-- Player profile: 1-2 reads per day/player.
-- Collectables/Achievements: 1 read each on login, cached.
-- Items: 3-5 reads/day/player
-- Trades: ~100 per day (multi-op transactions)
-- Inventory: ~500 updates/day
-
-### **DynamoDB Free Tier**
-
-- 25 RCUs/WCUs (approx 200M requests/mo)
-- 25GB storage
-- Usage: Well below limit with caching, load optimization.
-
-### **RDS Free Tier**
-
-- 750 instance hours (db.t3.micro), 20GB storage
-- Usage: ≤ 1000 players, comfortably under limit.
-
-### **Lambda Free Tier**
-
-- 1M invocations/month, 400K GB-seconds compute
-- Usage: Estimated 160K invocations/month
-
-### **Cost Optimization**
-
-- Caching reduces reads dramatically.
-- Trades/inventory offloaded to RDS for transactionality.
-- Monitoring actual usage is crucial (AWS Cost Explorer/CloudWatch).
-
----
-
-## Comparative Chart – DynamoDB vs RDS/Aurora
-
-| Feature         | DynamoDB                     | RDS/Aurora                        |
-| --------------- | ---------------------------- | --------------------------------- |
-| Scaling         | Auto, massive                | High, vertical/horizontal scaling |
-| Transactions    | Limited (single-table, keys) | Full ACID, multi-table            |
-| Analytics       | Limited (streams, no joins)  | Full SQL, joins, BI integration   |
-| Cost (low load) | Very low/free                | Free tier available               |
-
----
-
-### Load Distribution Visualization
-
-Consider including a simple chart illustrating where the read/write operations go:
-
-```markdown
-**Sample Load Distribution (for 1000 daily users):**
-
-| Service    | Reads/Month | Writes/Month | Usage Pattern                  |
-| ---------- | ----------- | ------------ | ------------------------------ |
-| DynamoDB   | ~50,000     | ~10,000      | Initial login/load, cache hits |
-| RDS/Aurora | ~10,000     | ~1,500       | Trades, inventory transactions |
-| Lambda     | ~160,000    | N/A          | Backend API calls, processing  |
-
-> _Visuals can be generated using bar or pie charts to show proportion of load._
-```
-
-If you want to graphically present these, use online tools for pie/bar charts, or embed as images once exported.
-
----
-
-### Future Scaling Considerations
-
-Add a section to show how the strategy supports future growth:
-
-- As user count grows, **DynamoDB** remains cost-effective for stable data.
-- **RDS/Aurora** can scale vertically/horizontally or upgrade instance size as transactional load increases (pay as you grow beyond free tier).
-- Lambda auto-scales, but monitor invocation spikes.
-
----
-
-### Change Justification Table
-
-Include a matrix showing "Before" and "After" to highlight why specific migrations help:
-
-```markdown
-| Entity       | Old (DynamoDB only)      | New (Hybrid)                                    | Reason for Change              |
-| ------------ | ------------------------ | ----------------------------------------------- | ------------------------------ |
-| Players      | All profile/session data | Static in DynamoDB, sensitive/relational in RDS | Security, analytics, scaling   |
-| Collectables | DynamoDB                 | DynamoDB                                        | Rare updates, fast global read |
-| Achievements | N/A (future)             | DynamoDB                                        | Static, cached on client       |
-| Items        | DynamoDB                 | RDS/Aurora                                      | Consistency, join performance  |
-| Trades       | DynamoDB                 | RDS/Aurora                                      | ACID, multi-table transactions |
-```
-
----
-
-### Implementation Best Practices
-
-- Use DynamoDB GSIs for flexible queries where possible.
-- Ensure all sensitive data in RDS is encrypted at rest and in transit.
-- Regularly review IAM roles and DB access permissions.
-- Leverage AWS monitoring for proactive scaling alerts.
-- Schedule regular backups for RDS and periodic exports for DynamoDB.
-
-## Recommendations
-
-- Store stable, read-heavy, rarely updated data in DynamoDB.
-- Move transactional, critical, and relational data to RDS/Aurora (especially trade logic, inventory updates).
-- Use client-side caching for collectables/achievements/data on load with push-notifications for changes.
-- Store session tokens locally only.
-- Monitor and alert for usage spikes and free tier overruns.
-- Regularly audit table design as playerbase grows.
-- Optimize Lambda code for minimal duration/memory.
-
-### References & Tools
-
-- GitHub - SamNewhouse/pineapple-donut
-- Amazon DynamoDB Pricing | NoSQL Key-Value Database
-- Amazon RDS Free Tier | Cloud Relational Database
-- Text To PDF - Convert TXT to PDF online For Free
+- **Current State:** All game data in DynamoDB, JWT client-side only, backend via Lambda
+- **Hybrid Future:** Static meta in DynamoDB, transactional data (trades/inventory) in RDS/Aurora for scaling and analytics
+- **Best Practice:** Static tokens, DRY types, modular structure

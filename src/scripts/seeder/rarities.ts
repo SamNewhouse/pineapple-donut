@@ -1,4 +1,4 @@
-import { rarityTiers } from "../../data/rarity";
+import { rarityTiers } from "../../functions/rarities";
 import { Rarity } from "../../types";
 
 /** Returns canonical array of Rarity objects to seed. */

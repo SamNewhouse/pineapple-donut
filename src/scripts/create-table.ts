@@ -1,5 +1,5 @@
 import { CreateTableCommand, ListTablesCommand } from "@aws-sdk/client-dynamodb";
-import { getClient } from "../core/dynamodb";
+import { getClient } from "../lib/dynamodb";
 
 /**
  * List all tables in the DynamoDB instance

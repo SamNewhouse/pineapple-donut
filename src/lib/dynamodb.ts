@@ -234,47 +234,37 @@ export async function query(
 }
 
 /**
- * Updates an existing item in DynamoDB with partial modifications
+ * Updates an existing item in DynamoDB with partial modifications.
  *
- * This operation:
- * - Only modifies specified attributes (doesn't replace entire item)
- * - Can add new attributes or update existing ones
- * - Can increment/decrement numeric values
- * - Can append to lists or add to sets
- * - Returns the updated item after modification
- *
- * Update Expression Syntax:
- * - SET: Set attribute values (SET #name = :name)
- * - ADD: Add to numeric values or sets (ADD score :increment)
- * - REMOVE: Remove attributes (REMOVE oldAttribute)
- * - DELETE: Delete from sets (DELETE stringSet :valueToRemove)
+ * - Only modifies specified attributes (doesn't replace/rewrite the entire item)
+ * - Can set, increment, or remove fields (DynamoDB UpdateExpression syntax)
+ * - Handles reserved words safely via ExpressionAttributeNames
+ * - Returns full updated item (after update)
  *
  * @param tableName - Name of the DynamoDB table
- * @param key - Primary key of the item to update
- * @param updateExpression - Update expression (e.g., "SET #name = :name, #score = :score")
- * @param expressionAttributeValues - Values for the update (e.g., { ":name": "John", ":score": 100 })
- * @param expressionAttributeNames - Optional attribute name mappings for reserved words
- * @returns The updated item attributes (after the update)
+ * @param key - Primary key of the item to update (e.g., { id: "abc-123" })
+ * @param updateExpression - DynamoDB update expression (e.g., "SET #foo = :foo")
+ * @param expressionAttributeValues - Values for the update (e.g., { ":foo": "bar" })
+ * @param expressionAttributeNames - Optional: for reserved words (e.g., { "#foo": "foo" })
+ * @returns The updated item after the patch, or null if nothing to update
  *
- * Example:
- * ```
- * // Update player stats
- * await update(
- *   "Players",
- *   { playerId: "123" },
- *   "SET totalScans = totalScans + :increment",
- *   { ":increment": 1 }
- * );
+ * @example
+ *   // Increment totalScans by 1
+ *   await update(
+ *     "Players",
+ *     { id: "player-1" },
+ *     "SET totalScans = totalScans + :inc",
+ *     { ":inc": 1 }
+ *   );
  *
- * // Update trade status
- * await update(
- *   "Trades",
- *   { tradeId: "abc" },
- *   "SET #status = :status, completedAt = :timestamp",
- *   { ":status": "completed", ":timestamp": "2023-01-01T00:00:00Z" },
- *   { "#status": "status" } // Handle reserved word
- * );
- * ```
+ *   // Set status and date fields (with one reserved word)
+ *   await update(
+ *     "Actions",
+ *     { id: "action-7" },
+ *     "SET #status = :status, finishedAt = :when",
+ *     { ":status": "completed", ":when": "2025-10-21T00:00:00Z" },
+ *     { "#status": "status" }
+ *   );
  */
 export async function update(
   tableName: string,
@@ -289,10 +279,10 @@ export async function update(
     Key: marshall(key),
     UpdateExpression: updateExpression,
     ExpressionAttributeValues: marshall(expressionAttributeValues),
-    ReturnValues: "ALL_NEW" as const, // Return the item after update
+    ReturnValues: "ALL_NEW", // Return updated item attributes
   };
 
-  // Add attribute name mappings if provided (for reserved words like 'status')
+  // Only pass names if present (reserved words)
   if (expressionAttributeNames) {
     params.ExpressionAttributeNames = expressionAttributeNames;
   }

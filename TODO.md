@@ -6,7 +6,7 @@
 
 - [ ] Player profile fields  
        _Add new fields (bio, stats, profile info) to Player schema. Provide endpoint to allow players to update only approved profile fields._
-- [ ] Rarity Table Endpoints
+- [x] Rarity Table Endpoints
       _Add REST API endpoints for CRUD operations on the Rarity table in the backend. Ensure docs are updated and test integration in the app_
 - [ ] Achievements integration  
        _Add an `achievements` array to Player schema. Maintain Achievements catalog table. Endpoints to add/remove achievements for players. Clients can cache catalog locally._
@@ -16,8 +16,8 @@
        _Add boolean field to owned Item records for marking favourites. Endpoints to toggle/reset (when traded)._
 - [ ] Collectable CRUD API  
        _Create, update, soft-delete endpoints for Collectables; "get all" exists._
-- [ ] Notifications API  
-       _Endpoints to send, store, retrieve player notifications._
+- [ ] Notifications API
+      _Endpoints to send, store, retrieve player notifications._
 - [ ] Advanced search/filter API  
        _Endpoints to query/filter items/trades by type, rarity, player, or criteria._
 

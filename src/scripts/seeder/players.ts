@@ -1,7 +1,7 @@
 import * as crypto from "crypto";
 import { Player } from "../../types";
 import { generate } from "random-words";
-import { hashPassword } from "../../core/auth";
+import { hashPassword } from "../../functions/auth";
 
 /**
  * Generate an array of test players with randomised attributes.
@@ -33,16 +33,12 @@ export function generatePlayers(count: number): Player[] {
 
   for (let i = 0; i < count; i++) {
     players.push({
-      // Universally unique identifier for DB primary key
       id: crypto.randomUUID(),
-      // Username is two random English words joined for memorability
       username: generate({ exactly: 2, join: "-" }),
-      // Email is two random words joined with '@', domain '.com'; prevents real emails in test
       email: `${generate({ exactly: 2, join: "@" })}.com`,
-      // Simulated scan/gameplay stat between 0 and 2000 inclusive
       totalScans: Math.floor(Math.random() * 2001),
-      // Realistic ISO creation date (current timestamp)
       createdAt: new Date().toISOString(),
+      passwordHash: hashPassword(crypto.randomUUID()),
     });
   }
   return players;

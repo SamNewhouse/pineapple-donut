@@ -1,5 +1,5 @@
-import { rarityTiers } from "../../data/rarity";
-import { Collectable } from "../../types";
+import { rarityTiers } from "../../functions/rarities";
+import { Collectable, Rarity } from "../../types";
 import { generateDescription } from "../data/descriptions";
 import { generateCollectableName } from "../data/words";
 
@@ -17,7 +17,7 @@ function pickWeightedRarityId(sessionTiers: Array<{ id: number; chance: number }
 
 export function generateCollectables(
   totalCollectables: number,
-  sessionTiers: Array<{ id: number; chance: number }>
+  sessionTiers: Array<{ id: number; chance: number }>,
 ): Collectable[] {
   const collectables: Collectable[] = [];
 
@@ -27,9 +27,9 @@ export function generateCollectables(
       id: crypto.randomUUID(),
       name: generateCollectableName(),
       description: generateDescription(
-        rarityTiers.find(rt => rt.id === tier.id)?.name ?? "Unknown"
+        rarityTiers.find((rt: Rarity) => rt.id === tier.id)?.name ?? "Unknown",
       ),
-      rarity: tier.id, // Only reference by id
+      rarity: tier.id,
       createdAt: new Date().toISOString(),
     });
   });
@@ -41,7 +41,7 @@ export function generateCollectables(
       id: crypto.randomUUID(),
       name: generateCollectableName(),
       description: generateDescription(
-        rarityTiers.find(rt => rt.id === rarityId)?.name ?? "Unknown"
+        rarityTiers.find((rt: Rarity) => rt.id === rarityId)?.name ?? "Unknown",
       ),
       rarity: rarityId,
       createdAt: new Date().toISOString(),
