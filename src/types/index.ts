@@ -4,6 +4,7 @@ export enum Tables {
   Players = "Players",
   Trades = "Trades",
   Rarities = "Rarities",
+  Achievements = "Achievements",
 }
 
 export interface Item {
@@ -57,6 +58,7 @@ export interface Player {
   totalScans: number;
   createdAt: string;
   passwordHash: string;
+  achievements?: string[];
 }
 
 export interface PlayerToken {
@@ -64,4 +66,12 @@ export interface PlayerToken {
   email: string;
   iat: number;
   exp: number;
+}
+
+export interface Achievement {
+  id: number;
+  name: string;
+  description: string;
+  iconUrl?: string;
+  createdAt: string;
 }

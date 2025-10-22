@@ -2,8 +2,9 @@ import * as jwt from "jsonwebtoken";
 import { PlayerToken, Player, Tables } from "../types";
 import * as crypto from "crypto";
 import { JWT_SECRET } from "../config/variables";
-import { generate } from "random-words";
 import * as Dynamodb from "../lib/dynamodb";
+import { faker } from "@faker-js/faker";
+import { generateWord } from "../utils/helpers";
 
 /**
  * Hash a password for secure storage using PBKDF2.
@@ -130,10 +131,9 @@ export async function registerPlayer(
     throw new Error("User already exists");
   }
 
-  const word = generate({ exactly: 2, join: "-" });
   const number = Math.floor(Math.random() * 2001);
   const id = crypto.randomUUID();
-  const username = `${word}${number}`;
+  const username = `${generateWord(3, 7)}-${generateWord(3, 7)}-${number}`;
   const passwordHash = hashPassword(password);
   const createdAt = new Date().toISOString();
 

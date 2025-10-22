@@ -5,25 +5,40 @@ import { generatePlayers } from "./seeder/players";
 import { generateItems } from "../functions/items";
 import { generateTrades } from "./seeder/trades";
 import { populateRarities, assignSessionChances } from "./seeder/rarities";
+import { generateAchievements } from "./seeder/achievements";
 
 /**
  * Seed a DynamoDB table by inserting provided data, with error-resilient logging for each item.
  */
 async function seedTable(tableName: string, data: any[]): Promise<void> {
   console.log(`Seeding ${tableName} with ${data.length} items...`);
-  let successCount = 0;
   for (const item of data) {
     try {
       await dynamo.put(tableName, item);
-      successCount++;
-      if (successCount % 50 === 0) {
-        console.log(`  ✅ Seeded ${successCount}/${data.length} items...`);
-      }
     } catch (error) {
       console.error(`  ❌ Error seeding ${tableName}:`, error);
     }
   }
-  console.log(`✅ ${tableName} seeding complete (${successCount}/${data.length} items)\n`);
+}
+
+async function generateAndSeed<T>(
+  tableName: string,
+  generator: () => T[],
+  postProcess?: (data: T[]) => T[] | void,
+): Promise<T[]> {
+  const start = performance.now();
+  let data = generator();
+  if (postProcess) {
+    const result = postProcess(data);
+    if (result) data = result;
+  }
+  await seedTable(tableName, data);
+  const end = performance.now();
+
+  console.log(
+    `✅ ${tableName} generated & seeded in ${((end - start) / 1000).toFixed(3)}s (${data.length} items)\n`,
+  );
+  return data;
 }
 
 /**
@@ -43,47 +58,36 @@ async function seedAllTables(): Promise<void> {
   try {
     console.log("🌱 Starting database seeding...\n");
 
-    const rarities = populateRarities();
-    await seedTable(Tables.Rarities, rarities);
-
+    const rarities = await generateAndSeed(Tables.Rarities, populateRarities);
+    const players = await generateAndSeed(Tables.Players, () => generatePlayers(75));
     const sessionTiers = assignSessionChances(rarities);
-    const players = generatePlayers(250);
-    const collectables = generateCollectables(500, sessionTiers);
-    const items = generateItems(players, collectables, rarities, 50000);
-    const trades = generateTrades(players, items, 150);
+    const collectables = await generateAndSeed(Tables.Collectables, () =>
+      generateCollectables(sessionTiers, 75),
+    );
+    const achievements = await generateAndSeed(Tables.Achievements, () => generateAchievements(35));
+    const items = await generateAndSeed(
+      Tables.Items,
+      () => generateItems(players, collectables, rarities, 1500),
+      (items) => {
+        const testUser = players.find((p) => p.email === "test@test.com");
+        if (testUser) {
+          for (let i = 0; i < 63; i++) {
+            items.push(generateItems([testUser], collectables, rarities, 1)[0]);
+          }
+        }
+        return items;
+      },
+    );
+    const trades = await generateAndSeed(Tables.Trades, () => generateTrades(players, items, 45));
 
-    const testUser = players.find((p) => p.email === "test@test.com");
-    if (testUser) {
-      const testUserItems: Item[] = [];
-      for (let i = 0; i < 250; i++) {
-        testUserItems.push(generateItems([testUser], collectables, rarities, 1)[0]);
-      }
-      items.push(...testUserItems);
-    }
-
-    await seedTable(Tables.Collectables, collectables);
-    await seedTable(Tables.Players, players);
-    await seedTable(Tables.Items, items);
-    await seedTable(Tables.Trades, trades);
-
-    console.log("👥 Sample test user accounts:");
-    players.slice(0, 5).forEach((player: Player) => {
-      const itemCount = items.filter((item) => item.playerId === player.id).length;
-      const tradeCount = trades.filter(
-        (trade) => trade.fromPlayerId === player.id || trade.toPlayerId === player.id,
-      ).length;
-      console.log(
-        `  - ${player.username} (${player.email}) - Items: ${itemCount}, Trades: ${tradeCount}`,
-      );
-    });
-
-    console.log("\n🎉 Database seeding complete!");
+    console.log("🎉 Database seeding complete!");
     console.log("📊 Final data counts:");
     console.log(`  - Rarities: ${rarities.length}`);
     console.log(`  - Collectables: ${collectables.length}`);
     console.log(`  - Players: ${players.length}`);
     console.log(`  - Items: ${items.length}`);
     console.log(`  - Trades: ${trades.length}`);
+    console.log(`  - Achievements: ${achievements.length}`);
 
     // Collectables Distribution by Rarity
     if (collectables.length > 0) {

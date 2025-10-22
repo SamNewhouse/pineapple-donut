@@ -16,6 +16,10 @@ export async function getPlayer(playerId: string): Promise<Player | null> {
   return Dynamodb.get(Tables.Players, { id: playerId });
 }
 
+export async function getAllPlayers(): Promise<Player[]> {
+  return Dynamodb.scan(Tables.Players);
+}
+
 /**
  * Patch a single allowed field on a player's profile.
  * Uses UpdateExpression—no get/put required.

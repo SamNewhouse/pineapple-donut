@@ -119,6 +119,14 @@ async function createTables() {
         ],
         BillingMode: "PAY_PER_REQUEST",
       },
+
+      // Achievements Table
+      {
+        TableName: "Achievements",
+        AttributeDefinitions: [{ AttributeName: "id", AttributeType: "N" }],
+        KeySchema: [{ AttributeName: "id", KeyType: "HASH" }],
+        BillingMode: "PAY_PER_REQUEST",
+      },
     ];
 
     for (const tableConfig of tables) {

@@ -11,6 +11,10 @@ export async function getTrade(tradeId: string): Promise<Trade | null> {
   return Dynamodb.get(Tables.Trades, { id: tradeId });
 }
 
+export async function getAllTrades(): Promise<Trade[]> {
+  return Dynamodb.scan(Tables.Trades);
+}
+
 /**
  * Fetch all trades where the player is either sender or recipient.
  *
