@@ -55,7 +55,7 @@ async function createTables() {
       // Rarities Table
       {
         TableName: "Rarities",
-        AttributeDefinitions: [{ AttributeName: "id", AttributeType: "N" }],
+        AttributeDefinitions: [{ AttributeName: "id", AttributeType: "S" }],
         KeySchema: [{ AttributeName: "id", KeyType: "HASH" }],
         BillingMode: "PAY_PER_REQUEST",
       },
@@ -117,6 +117,14 @@ async function createTables() {
             Projection: { ProjectionType: "ALL" },
           },
         ],
+        BillingMode: "PAY_PER_REQUEST",
+      },
+
+      // Achievements Table
+      {
+        TableName: "Achievements",
+        AttributeDefinitions: [{ AttributeName: "id", AttributeType: "S" }],
+        KeySchema: [{ AttributeName: "id", KeyType: "HASH" }],
         BillingMode: "PAY_PER_REQUEST",
       },
     ];

@@ -8,15 +8,15 @@ import { getTradeWithDetails } from "../../functions/trades";
  * - Full item data for offered/requested bundles
  * - Player usernames (for display only)
  *
- * @param event - API Gateway event with tradeId in path
+ * @param event - API Gateway event with id in path
  * @returns     - Success response with enriched trade data or error
  */
 export const handler: APIGatewayProxyHandler = async (event) => {
   try {
-    const tradeId = event.pathParameters?.tradeId;
-    if (!tradeId) return badRequest("tradeId is required");
+    const id = event.pathParameters?.id;
+    if (!id) return badRequest("id is required");
 
-    const trade = await getTradeWithDetails(tradeId);
+    const trade = await getTradeWithDetails(id);
     if (!trade) return notFound("Trade not found");
 
     return success(trade);

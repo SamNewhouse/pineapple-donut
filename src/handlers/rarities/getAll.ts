@@ -1,7 +1,6 @@
 import { APIGatewayProxyHandler } from "aws-lambda";
 import { success, handleError } from "../../lib/http";
-import * as Dynamodb from "../../lib/dynamodb";
-import { Tables, Rarity } from "../../types";
+import { Rarity } from "../../types";
 import { getAllRarities } from "../../functions/rarities";
 
 /**

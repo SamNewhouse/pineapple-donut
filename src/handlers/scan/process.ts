@@ -27,7 +27,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     const { id }: { id: string } = parseBody(event.body);
 
     if (!id) {
-      return badRequest("id and barcode required");
+      return badRequest("id required");
     }
 
     const collectables: Collectable[] = await Dynamodb.scan(Tables.Collectables);

@@ -12,17 +12,17 @@ import { TradeStatus } from "../../types";
  *  - Only the recipient may reject
  *  - Trade must be pending
  *
- * @param event - API Gateway event with tradeId in path and auth token
+ * @param event - API Gateway event with id in path and auth token
  * @returns     - Success response or error
  */
 export const handler: APIGatewayProxyHandler = async (event) => {
   try {
-    const tradeId = event.pathParameters?.tradeId;
-    if (!tradeId) return badRequest("tradeId is required");
+    const id = event.pathParameters?.id;
+    if (!id) return badRequest("id is required");
 
     const currentPlayer = parseAuthToken(event.headers.Authorization);
 
-    const trade = await getTrade(tradeId);
+    const trade = await getTrade(id);
     if (!trade) return notFound("Trade not found");
 
     if (currentPlayer.playerId !== trade.toPlayerId) {
@@ -32,7 +32,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       return badRequest(`Trade is ${trade.status}, not pending`);
     }
 
-    await updateTradeStatus(tradeId, TradeStatus.REJECTED);
+    await updateTradeStatus(id, TradeStatus.REJECTED);
 
     return success({ message: "Trade rejected" });
   } catch (err) {

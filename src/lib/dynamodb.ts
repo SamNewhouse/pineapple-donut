@@ -6,6 +6,7 @@ import {
   QueryCommand,
   UpdateItemCommand,
   DeleteItemCommand,
+  BatchGetItemCommand,
 } from "@aws-sdk/client-dynamodb";
 import { unmarshall, marshall } from "@aws-sdk/util-dynamodb";
 import {
@@ -88,10 +89,33 @@ export async function get(tableName: string, key: Record<string, any>): Promise<
   const params = {
     TableName: tableName,
     Key: marshall(key),
-    ConsistentRead: true, // Ensure we get the latest data
+    ConsistentRead: true,
   };
   const result = await client.send(new GetItemCommand(params));
   return result.Item ? unmarshall(result.Item) : null;
+}
+
+/**
+ * get-Batch items from DynamoDB by list of primary keys.
+ * @param tableName - Table name
+ * @param ids - Array of string IDs (primary key: 'id')
+ * @returns Array of found items
+ */
+export async function getBatch(tableName: string, ids: string[]): Promise<any[]> {
+  if (!ids.length) return [];
+  const client = getInstance();
+  const keys = ids.map((id) => marshall({ id }));
+  const params = {
+    RequestItems: {
+      [tableName]: {
+        Keys: keys,
+      },
+    },
+  };
+  const result = await client.send(new BatchGetItemCommand(params));
+  // Unmarshall all results for this table
+  const items = result.Responses?.[tableName] || [];
+  return items.map((item) => unmarshall(item));
 }
 
 /**

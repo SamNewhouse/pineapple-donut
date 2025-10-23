@@ -2,15 +2,15 @@ import { APIGatewayProxyHandler } from "aws-lambda";
 import { success, badRequest, notFound, handleError } from "../../lib/http";
 import { getItemById } from "../../functions/items";
 
-export const getItem: APIGatewayProxyHandler = async (event) => {
+export const handler: APIGatewayProxyHandler = async (event) => {
   try {
-    const itemId = event.pathParameters?.itemId;
+    const id = event.pathParameters?.id;
 
-    if (!itemId) {
-      return badRequest("itemId required");
+    if (!id) {
+      return badRequest("id required");
     }
 
-    const item = await getItemById(itemId);
+    const item = await getItemById(id);
 
     if (!item) {
       return notFound("Item not found");

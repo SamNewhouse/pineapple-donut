@@ -25,10 +25,10 @@
   "dependencies": {
     "@aws-sdk/client-dynamodb": "3.910.0",
     "@aws-sdk/util-dynamodb": "3.910.0",
+    "@faker-js/faker": "^10.1.0",
     "axios": "1.12.2",
     "dotenv": "^17.2.3",
     "jsonwebtoken": "9.0.2",
-    "random-words": "2.0.1",
     "uuid": "13.0.0"
   },
   "devDependencies": {
@@ -39,6 +39,7 @@
     "prettier": "3.6.2",
     "serverless": "4.20.2",
     "serverless-offline": "14.4.0",
+    "serverless-openapi-documenter": "^0.0.116",
     "typescript": "5.9.3"
   }
 }

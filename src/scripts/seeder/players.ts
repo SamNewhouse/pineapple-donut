@@ -1,8 +1,7 @@
 import * as crypto from "crypto";
 import { Player } from "../../types";
-import { generate } from "random-words";
+import { generateWord } from "../../utils/helpers";
 import { hashPassword } from "../../functions/auth";
-
 /**
  * Generate an array of test players with randomised attributes.
  *
@@ -21,6 +20,7 @@ import { hashPassword } from "../../functions/auth";
  */
 export function generatePlayers(count: number): Player[] {
   const players: Player[] = [];
+  const number = Math.floor(Math.random() * 2001);
 
   players.push({
     id: crypto.randomUUID(),
@@ -32,13 +32,14 @@ export function generatePlayers(count: number): Player[] {
   });
 
   for (let i = 0; i < count; i++) {
+    const playerName = `${generateWord(3, 7)}-${generateWord(3, 7)}-${number}`;
     players.push({
       id: crypto.randomUUID(),
-      username: generate({ exactly: 2, join: "-" }),
-      email: `${generate({ exactly: 2, join: "@" })}.com`,
+      username: playerName,
+      email: `${playerName}@${generateWord(4, 8)}.${generateWord(2, 3)}`,
       totalScans: Math.floor(Math.random() * 2001),
       createdAt: new Date().toISOString(),
-      passwordHash: hashPassword(crypto.randomUUID()),
+      passwordHash: hashPassword(playerName),
     });
   }
   return players;

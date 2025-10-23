@@ -159,6 +159,10 @@ export async function getItemById(itemId: string): Promise<Item | null> {
   return Dynamodb.get(Tables.Items, { id: itemId });
 }
 
+export async function getAllItems(): Promise<Item[]> {
+  return Dynamodb.scan(Tables.Items);
+}
+
 /**
  * Retrieves all items belonging to a specific player.
  *

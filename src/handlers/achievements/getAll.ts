@@ -1,16 +1,11 @@
 import { APIGatewayProxyHandler } from "aws-lambda";
+import { getAllAchievements } from "../../functions/achievements";
 import { success, handleError } from "../../lib/http";
-import { getAllItems } from "../../functions/items";
-import { Item } from "../../types";
 
 export const handler: APIGatewayProxyHandler = async (_event) => {
   try {
-    const items: Item[] = await getAllItems();
-
-    return success({
-      items,
-      total: items.length,
-    });
+    const achievements = await getAllAchievements();
+    return success({ achievements, total: achievements.length });
   } catch (error) {
     return handleError(error);
   }
