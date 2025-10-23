@@ -5,6 +5,8 @@ node_modules/
 .build/
 dist/
 coverage/
+openapi.json
+postman.json
 
 # Serverless deployment artifacts
 .serverless/

@@ -20,13 +20,13 @@ export interface Collectable {
   id: string;
   name: string;
   description: string;
-  rarity: number;
+  rarity: string;
   imageUrl?: string;
   createdAt: string;
 }
 
 export interface Rarity {
-  id: number;
+  id: string;
   name: string;
   minChance: number;
   maxChance: number;
@@ -69,7 +69,7 @@ export interface PlayerToken {
 }
 
 export interface Achievement {
-  id: number;
+  id: string;
   name: string;
   description: string;
   iconUrl?: string;

@@ -89,7 +89,7 @@ export async function get(tableName: string, key: Record<string, any>): Promise<
   const params = {
     TableName: tableName,
     Key: marshall(key),
-    ConsistentRead: true, // Ensure we get the latest data
+    ConsistentRead: true,
   };
   const result = await client.send(new GetItemCommand(params));
   return result.Item ? unmarshall(result.Item) : null;

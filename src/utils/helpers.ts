@@ -13,3 +13,8 @@ export const generateWord = (min: number, max: number): string => {
   }
   return word;
 };
+
+export const shortUUID = (): string => {
+  const uuid = crypto.randomUUID();
+  return uuid.slice(0, 8);
+};

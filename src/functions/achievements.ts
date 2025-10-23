@@ -2,6 +2,16 @@ import * as Dynamodb from "../lib/dynamodb";
 import { Tables, Achievement } from "../types";
 
 /**
+ * Retrieves a single achievement by its unique identifier.
+ *
+ * @param id    - The UUID or primary key of the item to retrieve
+ * @returns      - The Item object if found, or null if not found
+ */
+export async function getAchievementById(id: string): Promise<Achievement | null> {
+  return Dynamodb.get(Tables.Items, { id });
+}
+
+/**
  * Get all Achievements from the DB.
  *
  * @returns Array of Achievements items

@@ -5,9 +5,9 @@ import { updatePlayerField } from "../../functions/players";
 
 export const handler: APIGatewayProxyHandler = async (event) => {
   try {
-    const playerId = event.pathParameters?.id;
+    const id = event.pathParameters?.id;
     const field = event.pathParameters?.field;
-    if (!playerId || !field) return badRequest("Player ID and field are required");
+    if (!id || !field) return badRequest("Player ID and field are required");
 
     let token;
     try {
@@ -15,12 +15,12 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     } catch {
       return unauthorized("Authentication required");
     }
-    if (token.playerId !== playerId) return unauthorized("You can only update your own profile");
+    if (token.playerId !== id) return unauthorized("You can only update your own profile");
 
     const { value } = parseBody(event.body);
     if (typeof value === "undefined") return badRequest("No value provided");
 
-    const updatedPlayer = await updatePlayerField(playerId, field, value);
+    const updatedPlayer = await updatePlayerField(id, field, value);
 
     return success({ ...sanitizePlayer(updatedPlayer) }, 200, "Profile updated");
   } catch (error) {

@@ -1,11 +1,7 @@
 import * as crypto from "crypto";
 import { Player } from "../../types";
 import { generateWord } from "../../utils/helpers";
-
-function fakeHashPassword(password: string): string {
-  return "dev-salt:" + Buffer.from(password).toString("hex");
-}
-
+import { hashPassword } from "../../functions/auth";
 /**
  * Generate an array of test players with randomised attributes.
  *
@@ -30,19 +26,20 @@ export function generatePlayers(count: number): Player[] {
     id: crypto.randomUUID(),
     username: "test",
     email: "test@test.com",
-    passwordHash: fakeHashPassword("test"),
+    passwordHash: hashPassword("test"),
     totalScans: 666,
     createdAt: new Date().toISOString(),
   });
 
   for (let i = 0; i < count; i++) {
+    const playerName = `${generateWord(3, 7)}-${generateWord(3, 7)}-${number}`;
     players.push({
       id: crypto.randomUUID(),
-      username: `${generateWord(3, 7)}-${generateWord(3, 7)}-${number}`,
-      email: `${generateWord(8, 15)}@${generateWord(6, 10)}.${generateWord(2, 3)}`,
+      username: playerName,
+      email: `${playerName}@${generateWord(4, 8)}.${generateWord(2, 3)}`,
       totalScans: Math.floor(Math.random() * 2001),
       createdAt: new Date().toISOString(),
-      passwordHash: fakeHashPassword(crypto.randomUUID()),
+      passwordHash: hashPassword(playerName),
     });
   }
   return players;

@@ -21,6 +21,7 @@ package:
 
 plugins:
   - serverless-offline
+  - serverless-openapi-documenter
 
 custom:
   dynamodb:
@@ -30,16 +31,46 @@ custom:
       port: 8000
       inMemory: true
       migrate: true
+  documentation:
+    title: Pineapple-donut
+    version: "1.0.0"
+    description: "API for local testing with Postman"
+    models:
+      - name: ScanRequest
+        description: "Payload required to process a barcode scan"
+        contentType: application/json
+        schema:
+          type: object
+          properties:
+            id:
+              type: string
+              description: "Player ID that scanned the barcode"
+          required:
+            - id
 
 functions:
   # Rarities
   rarities--get-all:
-    handler: src/handlers/rarities/get.handler
+    handler: src/handlers/rarities/getAll.handler
     events:
       - http:
           path: rarities
           method: get
           cors: true
+          documentation:
+            summary: "Get all rarities"
+            description: "Returns a list of all possible rarities."
+            tags: [rarities]
+            methodResponses:
+              - statusCode: 200
+                responseBody:
+                  description: "Successful response with array of rarities"
+              - statusCode: 404
+                responseBody:
+                  description: "Rarities not found"
+              - statusCode: 500
+                responseBody:
+                  description: "Internal server error"
 
   # Collectables
   collectables--get-all:
@@ -49,6 +80,20 @@ functions:
           path: collectables
           method: get
           cors: true
+          documentation:
+            summary: "Get all collectables"
+            description: "Returns all collectable items in the system."
+            tags: [collectables]
+            methodResponses:
+              - statusCode: 200
+                responseBody:
+                  description: "Successful response with array of collectables"
+              - statusCode: 404
+                responseBody:
+                  description: "Collectables not found"
+              - statusCode: 500
+                responseBody:
+                  description: "Internal server error"
 
   # Player Management
   player--get:
@@ -58,6 +103,25 @@ functions:
           path: players/{id}
           method: get
           cors: true
+          documentation:
+            summary: "Get player by ID"
+            description: "Retrieve details for the player with the given ID."
+            tags: [players]
+            pathParams:
+              - name: id
+                description: The ID of the player
+                schema:
+                  type: string
+            methodResponses:
+              - statusCode: 200
+                responseBody:
+                  description: "Player details found"
+              - statusCode: 404
+                responseBody:
+                  description: "Player not found"
+              - statusCode: 500
+                responseBody:
+                  description: "Server error"
 
   player--update:
     handler: src/handlers/players/update.handler
@@ -66,6 +130,32 @@ functions:
           path: players/{id}/update/{field}
           method: post
           cors: true
+          documentation:
+            summary: "Update player field"
+            description: "Update a specific field for a player."
+            tags: [players]
+            pathParams:
+              - name: id
+                description: The ID of the player
+                schema:
+                  type: string
+              - name: field
+                description: Field to update
+                schema:
+                  type: string
+            methodResponses:
+              - statusCode: 200
+                responseBody:
+                  description: "Player updated successfully"
+              - statusCode: 400
+                responseBody:
+                  description: "Invalid input"
+              - statusCode: 404
+                responseBody:
+                  description: "Player not found"
+              - statusCode: 500
+                responseBody:
+                  description: "Server error"
 
   players--get-all:
     handler: src/handlers/players/getAll.handler
@@ -74,30 +164,101 @@ functions:
           path: players
           method: get
           cors: true
+          documentation:
+            summary: "Get all players"
+            description: "Returns all players."
+            tags: [players]
+            methodResponses:
+              - statusCode: 200
+                responseBody:
+                  description: "List of players"
+              - statusCode: 404
+                responseBody:
+                  description: "List of players not found"
+              - statusCode: 500
+                responseBody:
+                  description: "Server error"
 
   player--get-all-items:
     handler: src/handlers/items/getAllPlayer.handler
     events:
       - http:
-          path: players/{playerId}/items
+          path: players/{id}/items
           method: get
           cors: true
+          documentation:
+            summary: "Get all items for player"
+            description: "Returns all items for a specified player."
+            tags: [players, items]
+            pathParams:
+              - name: id
+                description: The ID of the player
+                schema:
+                  type: string
+            methodResponses:
+              - statusCode: 200
+                responseBody:
+                  description: "List of player's items"
+              - statusCode: 404
+                responseBody:
+                  description: "Player not found"
+              - statusCode: 500
+                responseBody:
+                  description: "Server error"
 
   player--get-all-trades:
     handler: src/handlers/trades/getAllPlayer.handler
     events:
       - http:
-          path: players/{playerId}/trades
+          path: players/{id}/trades
           method: get
           cors: true
+          documentation:
+            summary: "Get all trades for player"
+            description: "Returns all trades for a specified player."
+            tags: [players, trades]
+            pathParams:
+              - name: id
+                description: The ID of the player
+                schema:
+                  type: string
+            methodResponses:
+              - statusCode: 200
+                responseBody:
+                  description: "List of player's trades"
+              - statusCode: 404
+                responseBody:
+                  description: "Player not found"
+              - statusCode: 500
+                responseBody:
+                  description: "Server error"
 
   player--get-all-achievements:
     handler: src/handlers/achievements/getAllPlayer.handler
     events:
       - http:
-          path: players/{playerId}/achievements
+          path: players/{id}/achievements
           method: get
           cors: true
+          documentation:
+            summary: "Get all achievements for player"
+            description: "Returns all achievements for a specified player."
+            tags: [players, achievements]
+            pathParams:
+              - name: id
+                description: The ID of the player
+                schema:
+                  type: string
+            methodResponses:
+              - statusCode: 200
+                responseBody:
+                  description: "List of player's achievements"
+              - statusCode: 404
+                responseBody:
+                  description: "Player not found"
+              - statusCode: 500
+                responseBody:
+                  description: "Server error"
 
   # Authentication
   signup--process:
@@ -107,6 +268,20 @@ functions:
           path: auth/signup
           method: post
           cors: true
+          documentation:
+            summary: "User signup"
+            description: "Signup a new user."
+            tags: [auth]
+            methodResponses:
+              - statusCode: 201
+                responseBody:
+                  description: "User created"
+              - statusCode: 400
+                responseBody:
+                  description: "Invalid request"
+              - statusCode: 500
+                responseBody:
+                  description: "Server error"
 
   login--process:
     handler: src/handlers/login/process.handler
@@ -115,6 +290,20 @@ functions:
           path: auth/login
           method: post
           cors: true
+          documentation:
+            summary: "User login"
+            description: "Authenticate a user and provide token."
+            tags: [auth]
+            methodResponses:
+              - statusCode: 200
+                responseBody:
+                  description: "Login successful"
+              - statusCode: 400
+                responseBody:
+                  description: "Invalid credentials"
+              - statusCode: 500
+                responseBody:
+                  description: "Server error"
 
   # Scan
   scan--process:
@@ -124,15 +313,53 @@ functions:
           path: scan/process
           method: post
           cors: true
+          documentation:
+            summary: "Process scan"
+            description: "Process a scan request and award a random item to the player."
+            tags: [scan]
+            requestBody:
+              description: "Player ID submitted by the client (JSON object: { id: string })"
+              required: true
+            requestModels:
+              application/json: ScanRequest
+            methodResponses:
+              - statusCode: 200
+                responseBody:
+                  description: "Scan processed and item awarded"
+              - statusCode: 400
+                responseBody:
+                  description: "Missing or invalid player ID"
+              - statusCode: 500
+                responseBody:
+                  description: "Internal server error"
 
   # Items
   item--get:
     handler: src/handlers/items/get.handler
     events:
       - http:
-          path: items/{itemId}
+          path: items/{id}
           method: get
           cors: true
+          documentation:
+            summary: "Get item by ID"
+            description: "Retrieve a specific item by ID."
+            tags: [items]
+            pathParams:
+              - name: id
+                description: The ID of the item
+                schema:
+                  type: string
+            methodResponses:
+              - statusCode: 200
+                responseBody:
+                  description: "Item found"
+              - statusCode: 404
+                responseBody:
+                  description: "Item not found"
+              - statusCode: 500
+                responseBody:
+                  description: "Server error"
 
   items--get-all:
     handler: src/handlers/items/getAll.handler
@@ -141,15 +368,48 @@ functions:
           path: items
           method: get
           cors: true
+          documentation:
+            summary: "Get all items"
+            description: "Returns all items."
+            tags: [items]
+            methodResponses:
+              - statusCode: 200
+                responseBody:
+                  description: "List of items"
+              - statusCode: 404
+                responseBody:
+                  description: "List of items not found"
+              - statusCode: 500
+                responseBody:
+                  description: "Server error"
 
   # Trades
   trade--get:
     handler: src/handlers/trades/get.handler
     events:
       - http:
-          path: trades/{tradeId}
+          path: trades/{id}
           method: get
           cors: true
+          documentation:
+            summary: "Get trade by ID"
+            description: "Retrieve a specific trade by ID."
+            tags: [trades]
+            pathParams:
+              - name: id
+                description: The ID of the trade
+                schema:
+                  type: string
+            methodResponses:
+              - statusCode: 200
+                responseBody:
+                  description: "Trade found"
+              - statusCode: 404
+                responseBody:
+                  description: "Trade not found"
+              - statusCode: 500
+                responseBody:
+                  description: "Server error"
 
   trades--get-all:
     handler: src/handlers/trades/getAll.handler
@@ -158,6 +418,20 @@ functions:
           path: trades
           method: get
           cors: true
+          documentation:
+            summary: "Get all trades"
+            description: "Returns all trades."
+            tags: [trades]
+            methodResponses:
+              - statusCode: 200
+                responseBody:
+                  description: "List of trades"
+              - statusCode: 404
+                responseBody:
+                  description: "List of trades not found"
+              - statusCode: 500
+                responseBody:
+                  description: "Server error"
 
   trade--create:
     handler: src/handlers/trades/create.handler
@@ -166,30 +440,101 @@ functions:
           path: trades/create
           method: post
           cors: true
+          documentation:
+            summary: "Create a trade"
+            description: "Creates a new trade."
+            tags: [trades]
+            methodResponses:
+              - statusCode: 201
+                responseBody:
+                  description: "Trade created"
+              - statusCode: 400
+                responseBody:
+                  description: "Invalid trade request"
+              - statusCode: 500
+                responseBody:
+                  description: "Server error"
 
   trade--accept:
     handler: src/handlers/trades/accept.handler
     events:
       - http:
-          path: trades/{tradeId}/accept
+          path: trades/{id}/accept
           method: post
           cors: true
+          documentation:
+            summary: "Accept a trade"
+            description: "Accepts a trade by ID."
+            tags: [trades]
+            pathParams:
+              - name: id
+                description: The trade ID
+                schema:
+                  type: string
+            methodResponses:
+              - statusCode: 200
+                responseBody:
+                  description: "Trade accepted"
+              - statusCode: 404
+                responseBody:
+                  description: "Trade not found"
+              - statusCode: 500
+                responseBody:
+                  description: "Server error"
 
   trade--reject:
     handler: src/handlers/trades/reject.handler
     events:
       - http:
-          path: trades/{tradeId}/reject
+          path: trades/{id}/reject
           method: post
           cors: true
+          documentation:
+            summary: "Reject a trade"
+            description: "Rejects a trade by ID."
+            tags: [trades]
+            pathParams:
+              - name: id
+                description: The trade ID
+                schema:
+                  type: string
+            methodResponses:
+              - statusCode: 200
+                responseBody:
+                  description: "Trade rejected"
+              - statusCode: 404
+                responseBody:
+                  description: "Trade not found"
+              - statusCode: 500
+                responseBody:
+                  description: "Server error"
 
   trade--cancel:
     handler: src/handlers/trades/cancel.handler
     events:
       - http:
-          path: trades/{tradeId}/cancel
+          path: trades/{id}/cancel
           method: post
           cors: true
+          documentation:
+            summary: "Cancel a trade"
+            description: "Cancels a trade by ID."
+            tags: [trades]
+            pathParams:
+              - name: id
+                description: The trade ID
+                schema:
+                  type: string
+            methodResponses:
+              - statusCode: 200
+                responseBody:
+                  description: "Trade cancelled"
+              - statusCode: 404
+                responseBody:
+                  description: "Trade not found"
+              - statusCode: 500
+                responseBody:
+                  description: "Server error"
 
   # Achievements
   achievement--get:
@@ -199,6 +544,25 @@ functions:
           path: achievements/{id}
           method: get
           cors: true
+          documentation:
+            summary: "Get achievement by ID"
+            description: "Retrieve an achievement by ID."
+            tags: [achievements]
+            pathParams:
+              - name: id
+                description: The achievement ID
+                schema:
+                  type: string
+            methodResponses:
+              - statusCode: 200
+                responseBody:
+                  description: "Achievement found"
+              - statusCode: 404
+                responseBody:
+                  description: "Achievement not found"
+              - statusCode: 500
+                responseBody:
+                  description: "Server error"
 
   achievements--get-all:
     handler: src/handlers/achievements/getAll.handler
@@ -207,6 +571,20 @@ functions:
           path: achievements
           method: get
           cors: true
+          documentation:
+            summary: "Get all achievements"
+            description: "Returns all achievements."
+            tags: [achievements]
+            methodResponses:
+              - statusCode: 200
+                responseBody:
+                  description: "List of achievements"
+              - statusCode: 404
+                responseBody:
+                  description: "List of achievements not found"
+              - statusCode: 500
+                responseBody:
+                  description: "Server error"
 
 resources:
   Resources:
@@ -230,7 +608,7 @@ resources:
         TableName: Rarities
         AttributeDefinitions:
           - AttributeName: id
-            AttributeType: N
+            AttributeType: S
         KeySchema:
           - AttributeName: id
             KeyType: HASH
@@ -316,7 +694,7 @@ resources:
         TableName: Achievements
         AttributeDefinitions:
           - AttributeName: id
-            AttributeType: N
+            AttributeType: S
         KeySchema:
           - AttributeName: id
             KeyType: HASH

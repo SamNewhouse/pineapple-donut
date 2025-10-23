@@ -4,8 +4,8 @@ import { generateCollectables } from "./seeder/collectables";
 import { generatePlayers } from "./seeder/players";
 import { generateItems } from "../functions/items";
 import { generateTrades } from "./seeder/trades";
-import { populateRarities, assignSessionChances } from "./seeder/rarities";
 import { generateAchievements } from "./seeder/achievements";
+import { assignSessionChances, populateRarities } from "../functions/rarities";
 
 /**
  * Seed a DynamoDB table by inserting provided data, with error-resilient logging for each item.
@@ -67,13 +67,14 @@ async function seedAllTables(): Promise<void> {
     const achievements = await generateAndSeed(Tables.Achievements, () => generateAchievements(35));
     const items = await generateAndSeed(
       Tables.Items,
-      () => generateItems(players, collectables, rarities, 1500),
+      () => generateItems(players, collectables, rarities, 200),
       (items) => {
         const testUser = players.find((p) => p.email === "test@test.com");
         if (testUser) {
-          for (let i = 0; i < 63; i++) {
-            items.push(generateItems([testUser], collectables, rarities, 1)[0]);
-          }
+          const testItems = collectables.map(
+            (collectable) => generateItems([testUser], [collectable], rarities, 1)[0],
+          );
+          items.push(...testItems);
         }
         return items;
       },
@@ -96,18 +97,18 @@ async function seedAllTables(): Promise<void> {
           acc[item.rarity] = (acc[item.rarity] || 0) + 1;
           return acc;
         },
-        {} as Record<number, number>,
+        {} as Record<string, number>,
       );
 
       console.log("\n🎲 Collectables Distribution:");
       Object.entries(rarityCount)
         .sort(([rarityA], [rarityB]) => {
-          const chanceA = sessionTiers.find((tier) => tier.id === Number(rarityA))?.chance || 0;
-          const chanceB = sessionTiers.find((tier) => tier.id === Number(rarityB))?.chance || 0;
+          const chanceA = sessionTiers.find((tier) => tier.id === rarityA)?.chance || 0;
+          const chanceB = sessionTiers.find((tier) => tier.id === rarityB)?.chance || 0;
           return chanceB - chanceA;
         })
         .forEach(([rarity, count]) => {
-          const configTier = rarities.find((tier) => tier.id === Number(rarity));
+          const configTier = rarities.find((tier) => tier.id === rarity);
           const minChance = configTier?.minChance ?? 0;
           const maxChance = configTier?.maxChance ?? 0;
           const name = configTier?.name ?? rarity;
@@ -128,18 +129,18 @@ async function seedAllTables(): Promise<void> {
           acc[rarityId] = (acc[rarityId] || 0) + 1;
           return acc;
         },
-        {} as Record<number, number>,
+        {} as Record<string, number>,
       );
 
       console.log("\n🏆 Items Distribution:");
       Object.entries(itemRarityCount)
         .sort(([rarityA], [rarityB]) => {
-          const chanceA = sessionTiers.find((tier) => tier.id === Number(rarityA))?.chance || 0;
-          const chanceB = sessionTiers.find((tier) => tier.id === Number(rarityB))?.chance || 0;
+          const chanceA = sessionTiers.find((tier) => tier.id === rarityA)?.chance || 0;
+          const chanceB = sessionTiers.find((tier) => tier.id === rarityB)?.chance || 0;
           return chanceB - chanceA;
         })
         .forEach(([rarity, count]) => {
-          const configTier = rarities.find((tier) => tier.id === Number(rarity));
+          const configTier = rarities.find((tier) => tier.id === rarity);
           const minChance = configTier?.minChance ?? 0;
           const maxChance = configTier?.maxChance ?? 0;
           const name = configTier?.name ?? rarity;

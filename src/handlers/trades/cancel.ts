@@ -12,24 +12,24 @@ import { getTrade, updateTradeStatus } from "../../functions/trades";
  *  - Only original sender may cancel
  *  - Trade must be pending
  *
- * @param event - API Gateway event with tradeId in path and auth token
+ * @param event - API Gateway event with id in path and auth token
  * @returns Success response or error
  */
 export const handler: APIGatewayProxyHandler = async (event) => {
   try {
-    const tradeId = event.pathParameters?.tradeId;
-    if (!tradeId) return badRequest("tradeId is required");
+    const id = event.pathParameters?.id;
+    if (!id) return badRequest("id is required");
 
     const currentUser = parseAuthToken(event.headers.Authorization);
 
-    const trade = await getTrade(tradeId);
+    const trade = await getTrade(id);
     if (!trade) return notFound("Trade not found");
 
     if (currentUser.playerId !== trade.fromPlayerId) {
       return error("You are not allowed to cancel this trade", 403);
     }
 
-    await updateTradeStatus(tradeId, TradeStatus.REJECTED);
+    await updateTradeStatus(id, TradeStatus.REJECTED);
 
     return success({ message: "Trade cancelled" });
   } catch (err) {

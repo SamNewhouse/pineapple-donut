@@ -1,5 +1,5 @@
 import { APIGatewayProxyHandler } from "aws-lambda";
-import { success, badRequest, handleError } from "../../lib/http";
+import { success, handleError } from "../../lib/http";
 import { getAllItems } from "../../functions/items";
 import { Item } from "../../types";
 

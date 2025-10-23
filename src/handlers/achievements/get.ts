@@ -1,12 +1,17 @@
 import { APIGatewayProxyHandler } from "aws-lambda";
-import { getAllAchievements } from "../../functions/achievements";
-import { success, handleError } from "../../lib/http";
+import { getAchievementById } from "../../functions/achievements";
+import { success, handleError, badRequest, notFound } from "../../lib/http";
 
-export const handler: APIGatewayProxyHandler = async (_event) => {
+export const handler: APIGatewayProxyHandler = async (event) => {
   try {
-    const achievements = await getAllAchievements();
-    return success({ achievements, total: achievements.length });
-  } catch (error) {
-    return handleError(error);
+    const id = event.pathParameters?.id;
+    if (!id) return badRequest("id is required");
+
+    const achievement = await getAchievementById(id);
+    if (!achievement) return notFound("Achievement not found");
+
+    return success(achievement);
+  } catch (err) {
+    return handleError(err);
   }
 };

@@ -7,15 +7,15 @@ import { getPlayerTrades } from "../../functions/trades";
  *
  * Returns trades sent by this player and received by this player, for dashboards or history.
  *
- * @param event - API Gateway event with playerId in path
+ * @param event - API Gateway event with id in path
  * @returns Success response with trade lists and summary count or error
  */
 export const handler: APIGatewayProxyHandler = async (event) => {
   try {
-    const playerId = event.pathParameters?.playerId;
-    if (!playerId) return badRequest("playerId is required");
+    const id = event.pathParameters?.id;
+    if (!id) return badRequest("id is required");
 
-    const { sentTrades, receivedTrades } = await getPlayerTrades(playerId);
+    const { sentTrades, receivedTrades } = await getPlayerTrades(id);
 
     return success({
       sentTrades,

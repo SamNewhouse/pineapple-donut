@@ -27,11 +27,11 @@ import {
 export const handler: APIGatewayProxyHandler = async (event) => {
   try {
     const currentUser = parseAuthToken(event.headers.Authorization);
-    const tradeId = event.pathParameters?.tradeId;
-    if (!tradeId) return badRequest("tradeId is required");
+    const id = event.pathParameters?.id;
+    if (!id) return badRequest("id is required");
 
     // 1. Load and validate the trade
-    const trade = await getTrade(tradeId);
+    const trade = await getTrade(id);
     if (!trade) return notFound("Trade not found");
     if (trade.toPlayerId !== currentUser.playerId) {
       return error("You can only accept trades offered to you", 403);
@@ -52,13 +52,13 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     await Promise.all([
       transferItemOwnership(trade.offeredItemIds, currentUser.playerId),
       transferItemOwnership(trade.requestedItemIds, trade.fromPlayerId),
-      updateTradeStatus(tradeId, TradeStatus.COMPLETED),
+      updateTradeStatus(id, TradeStatus.COMPLETED),
     ]);
 
     // 4. Cancel all other pending trades involving these items
     const movedItemIds = [...trade.offeredItemIds, ...trade.requestedItemIds];
     if (movedItemIds.length > 0) {
-      const conflicts = await findConflictingTrades(tradeId, movedItemIds);
+      const conflicts = await findConflictingTrades(id, movedItemIds);
       await Promise.all(
         conflicts.map((conflict) => updateTradeStatus(conflict.id, TradeStatus.CANCELLED)),
       );

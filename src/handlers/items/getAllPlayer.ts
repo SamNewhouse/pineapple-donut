@@ -1,18 +1,19 @@
 import { APIGatewayProxyHandler } from "aws-lambda";
 import { success, badRequest, handleError } from "../../lib/http";
 import { getItemsByPlayer } from "../../functions/items";
+import { Item } from "../../types";
 
-export const getAll: APIGatewayProxyHandler = async (event) => {
+export const handler: APIGatewayProxyHandler = async (event) => {
   try {
-    const playerId = event.pathParameters?.playerId;
-    if (!playerId) {
-      return badRequest("playerId required");
+    const id = event.pathParameters?.id;
+    if (!id) {
+      return badRequest("id required");
     }
 
-    const playerItems = await getItemsByPlayer(playerId);
+    const playerItems = await getItemsByPlayer(id);
 
     return success({
-      items: playerItems.map((item) => ({
+      items: playerItems.map((item: Item) => ({
         id: item.id,
         collectableId: item.collectableId,
         foundAt: item.foundAt,

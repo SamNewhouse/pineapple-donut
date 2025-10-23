@@ -39,6 +39,7 @@
     "prettier": "3.6.2",
     "serverless": "4.20.2",
     "serverless-offline": "14.4.0",
+    "serverless-openapi-documenter": "^0.0.116",
     "typescript": "5.9.3"
   }
 }

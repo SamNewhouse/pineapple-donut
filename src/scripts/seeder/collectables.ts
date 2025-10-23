@@ -1,5 +1,5 @@
 import { Collectable, Rarity } from "../../types";
-import { rarityTiers } from "../../functions/rarities";
+import { pickWeightedRarityId, rarityTiers } from "../../functions/rarities";
 import { faker } from "@faker-js/faker";
 import { capitalize } from "../../utils/helpers";
 
@@ -107,20 +107,8 @@ export function generateFantasyDescription(rarity: string): string {
   ].join(" ");
 }
 
-// Pick weighted rarity id by session chance (unchanged)
-function pickWeightedRarityId(sessionTiers: Array<{ id: number; chance: number }>): number {
-  const total = sessionTiers.reduce((sum, tier) => sum + tier.chance, 0);
-  const r = Math.random() * total;
-  let acc = 0;
-  for (const tier of sessionTiers) {
-    acc += tier.chance;
-    if (r <= acc) return tier.id;
-  }
-  return sessionTiers[sessionTiers.length - 1].id; // fallback
-}
-
 export function generateCollectables(
-  sessionTiers: Array<{ id: number; chance: number }>,
+  sessionTiers: Array<{ id: string; chance: number }>,
   totalCollectables: number,
 ): Collectable[] {
   const collectables: Collectable[] = [];

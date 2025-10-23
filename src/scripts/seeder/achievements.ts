@@ -1,6 +1,6 @@
 import { Achievement } from "../../types";
 import { faker } from "@faker-js/faker";
-import { capitalize } from "../../utils/helpers";
+import { capitalize, shortUUID } from "../../utils/helpers";
 
 /**
  * Generates realistic achievements for Pineapple Donut using your actual game mechanics.
@@ -51,7 +51,6 @@ export function generateAchievements(count: number): Achievement[] {
         break;
       }
       case "collect_rarity": {
-        // Rarity can be "Rare", "Epic", "Legendary" etc. -- use faker color for variety here!
         const rarity = capitalize(faker.color.human());
         name = `${rarity} Collector`;
         description = `Obtain your first ${rarity.toLowerCase()} collectable.`;
@@ -102,26 +101,19 @@ export function generateAchievements(count: number): Achievement[] {
         description = `Find a legendary item from a scan.`;
         break;
       }
-      case "player_level": {
-        const level = faker.helpers.arrayElement([5, 10, 15, 25, 50, 100]);
-        name = `Level ${level} Milestone`;
-        description = `Reach player level ${level}.`;
-        break;
-      }
       case "profile_custom": {
         name = "Fashion Statement";
         description = `Customize your player profile with a new username or bio.`;
         break;
       }
       default: {
-        // Misc/fun/unexpected
         name = `${capitalize(faker.word.verb())} the ${faker.word.adjective()} ${faker.word.noun()}`;
         description = `Perform a unique action involving ${faker.word.noun()} for a surprise!`;
       }
     }
 
     achievements.push({
-      id: i,
+      id: shortUUID(),
       name,
       description,
       createdAt: new Date().toISOString(),
